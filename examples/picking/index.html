@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Examples</title>
+    <style type="text/css">
+      body, html {
+        height: 100%;
+        margin: 0;
+        background: #444;
+        color: #fff;
+        font-family: Arial;
+        font-size: 10px;
+      }
+      #framerate {
+        position: absolute;
+        right: 0;
+        top:   0;
+        display: inline-block;
+        text-align: right;
+      }
+      #canvas {
+        max-height: 100%;
+        max-width: 100%;
+        background-color: #000;
+        margin: auto;
+        display: block;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="framerate"></div>
+    <canvas width="600" height="600" id="canvas" ></canvas>
+  </body>
+  <script src="../../build/dkcp-gl.js"></script>
+  <script src="./bundle.js"></script>
+</html>
