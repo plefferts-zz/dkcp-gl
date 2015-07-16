@@ -13,6 +13,8 @@
   "devDependencies": {
     "brfs": "^1.4.0",
     "browserify": "^9.0.3",
+    "browserify-bower": "^0.4.3",
+    "eventify": "^2.0.0",
     "factor-bundle": "^2.3.3",
     "glslmin": "0.0.0",
     "gulp": "^3.8.11",
