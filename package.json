@@ -1,6 +1,6 @@
 {
   "name": "dkcp-gl",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -14,7 +14,6 @@
     "brfs": "^1.4.0",
     "browserify": "^9.0.3",
     "browserify-bower": "^0.4.3",
-    "eventify": "^2.0.0",
     "factor-bundle": "^2.3.3",
     "glslmin": "0.0.0",
     "gulp": "^3.8.11",
@@ -22,5 +21,9 @@
     "gulp-uglify": "^1.1.0",
     "watchify": "^2.4.0",
     "xtend": "^4.0.0"
+  },
+  "dependencies": {
+    "eventify": "^2.0.0",
+    "twgl.js": "0.0.25"
   }
 }
