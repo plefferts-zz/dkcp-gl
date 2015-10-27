@@ -31,7 +31,7 @@ RenderSet.prototype.render = function (gl) {
   this.checkSort();
   
   for (var i=0; i<this.renderables.length; i ++) {
-    this.renderables[i].render(gl);
+    this.renderables[i].render(gl, this);
   }
 }
 

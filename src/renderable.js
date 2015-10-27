@@ -14,7 +14,7 @@ function Renderable(options) {
 }
 util.inherits(Renderable, Acommodator)
 
-Renderable.prototype.render = function (gl) {
+Renderable.prototype.render = function (gl, renderSet) {
   var fn
 
   fn = this.options.before
@@ -22,7 +22,7 @@ Renderable.prototype.render = function (gl) {
 
   fn = this.options.getUniforms
   
-  var uniforms = fn ? fn.call(this) : {}
+  var uniforms = fn ? fn.call(this, renderSet) : {}
   
   fn = this.options.render || this.renderModels
   fn.call(this, gl, uniforms)
