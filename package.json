@@ -5,21 +5,13 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "minify-glsl": "cat src/glsl/noise.glsl | ./bin/glsl2js > src/glsl/noise.min.glsl.js",
-    "watchify": "node watchify.js"
+    "minify-glsl": "cat src/glsl/noise.glsl | ./bin/glsl2js > src/glsl/noise.min.glsl.js"
   },
   "author": "",
   "license": "Proprietary",
   "devDependencies": {
-    "brfs": "^1.4.0",
-    "browserify": "^9.0.3",
-    "browserify-bower": "^0.4.3",
-    "factor-bundle": "^2.3.3",
     "glslmin": "0.0.0",
-    "gulp": "^3.8.11",
-    "gulp-concat": "^2.5.1",
-    "gulp-uglify": "^1.1.0",
-    "watchify": "^2.4.0",
+    "webpack": "^1.12.2",
     "xtend": "^4.0.0"
   },
   "dependencies": {

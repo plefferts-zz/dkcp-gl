@@ -36,4 +36,4 @@ Two geodesics (11 subdivisions) with a random color per vertex.
 
 ##Compiling
 
-    npm run watchify examples/[examplename]
+    ./node_modules/webpack/bin/webpack.js

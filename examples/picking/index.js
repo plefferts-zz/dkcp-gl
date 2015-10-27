@@ -36,6 +36,7 @@ function getRenderable() {
     },
     renderOrder : 1,
     getUniforms : function (renderSet) {
+      console.log(renderSet)
       return {
         camera : renderSet == screen ? camera.computeMatrix() : renderSet.camera.computeMatrix()
       }
