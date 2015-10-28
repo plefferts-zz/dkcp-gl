@@ -36,29 +36,39 @@ function getRenderable() {
       if (renderSet == screen) {
         return {
           camera : camera.computeMatrix(),
-          camera2 : identity
+          camera2 : identity,
+          hit_test : 0
         }
       }
       return {
         camera : renderSet.camera.computeMatrix(),
-        camera2 : renderSet.camera2
+        camera2 : renderSet.camera2,
+        hit_test : 1
         
       }
     },
     factory : function () {
       
       var maxColors = 100
-      var colorAllocation = new Allocation.Float(maxColors, 4)
-
+      var colorAllocation    = new Allocation.Float(maxColors, 4)
+      
       var shader = new Shader(function () {
         return '  gl_Position = camera2 * camera * position; \n' + 
-               '  f_color = colors[int(color)]; \n'
+               '  f_hit_color = colors[int(hit_color)];      \n' + 
+               '  f_color = colors[int(color)];              \n'
       }, function () {
-        return '  gl_FragColor = f_color ;\n'
+        return '  if (hit_test > 0) {            \n' + 
+               '    gl_FragColor = f_hit_color;  \n' +
+               '   } else {                      \n' +
+               '    gl_FragColor = f_color;      \n' +
+               '   }                             \n'
       })
       shader.attributes.position   = 'vec4';
       shader.attributes.color      = 'float';
       shader.varyings.f_color      = 'vec4';
+      shader.varyings.f_hit_color  = 'vec4';
+      shader.attributes.hit_color  = 'float';
+      shader.fragment_uniforms.hit_test = 'int';
       shader.vertex_uniforms.camera = 'mat4';
       shader.vertex_uniforms.camera2 = 'mat4';
       shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
@@ -72,6 +82,14 @@ function getRenderable() {
         return [
           colorAllocation.add(item.color, item, function () {
             return item.color.color
+          })
+        ]
+      });
+
+      m.addAttribute('hit_color', 1, 'Float32Array', function (i, item) {
+        return [
+          colorAllocation.add(item.hit_color, item, function () {
+            return item.hit_color.color
           })
         ]
       });
@@ -92,31 +110,39 @@ var square = function (x, y, z, w) {
   ]
 }
 
-var red   = {id: 'red',   color: [1, 0, 0, 1]}
-var green = {id: 'green', color: [0, 1, 0, 1]}
-var blue  = {id: 'blue',  color: [0, 0, 1, 1]}
-var white = {id: 'white', color: [1, 1, 1, 1]}
+var red     = {id: 'red',     color: [1, 0, 0, 1]}
+var green   = {id: 'green',   color: [0, 1, 0, 1]}
+var blue    = {id: 'blue',    color: [0, 0, 1, 1]}
+var white   = {id: 'white',   color: [1, 1, 1, 1]}
+var yellow  = {id: 'yellow',  color: [1, 1, 0, 1]}
+var cyan    = {id: 'cyan',    color: [0, 1, 1, 1]}
+var magenta = {id: 'magenta', color: [1, 0, 1, 1]}
+var black   = {id: 'black',   color: [0, 0, 0, 1]}
 
   
 var quads  = getRenderable()
 screen.addRenderable(quads)
 quads.add({
   color : red,
+  hit_color : cyan,
   allocations : {},
   vertices : square(.25, 0, .7, .05)
 })
 quads.add({
   color : green,
+  hit_color : magenta,
   allocations : {},
   vertices : square(0, .25, .7, .05)
 })
 quads.add({
   color : blue,
+  hit_color : yellow,
   allocations : {},
   vertices : square(0, 0, .9, .05)
 })
 quads.add({
   color : white,
+  hit_color : black,
   allocations : {},
   vertices : square(0, 0, .7, .01)
 })
