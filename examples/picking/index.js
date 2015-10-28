@@ -30,14 +30,10 @@ var gl     = main.screen.gl;
 
 function getRenderable() {
   return new Renderable({
-    before : function () {
-      gl.clearColor(0,0,0,0);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    },
-    renderOrder : 1,
-    getUniforms : function (renderSet) {
+    renderOrder : 10,
+    getUniforms : function () {
       return {
-        camera : renderSet == screen ? camera.computeMatrix() : renderSet.camera.computeMatrix()
+        camera : camera.computeMatrix()
       }
     },
     factory : function () {
@@ -126,15 +122,16 @@ function MyRenderSet(framebuffers) {
     this.cameras.push(c = new BasicCamera(framebuffers.size, framebuffers.size, .1, 4096));
     c.setFOV(90, true);
   }
-  
+
+  this.camera = c;
+  this.camera.rotateBy(0, Math.PI, 0);
+
   // this.cameras[2].rotateBy(0, Math.PI/2, 0);
   // this.cameras[3].rotateBy(0, -Math.PI/2, 0);
   // this.cameras[5].rotateBy(0, Math.PI, Math.PI);
   // this.cameras[1].rotateBy(0, Math.PI, -Math.PI/2);
   // this.cameras[4].rotateBy(0, Math.PI, 0);
   // this.cameras[0].rotateBy(0, Math.PI, Math.PI/2);
-
-  this.cameras[0].rotateBy(0, Math.PI, 0);
   
   RenderSet.call(this)
 }
@@ -149,12 +146,21 @@ MyRenderSet.prototype.render = function (gl) {
   this.framebuffers.unbind();
 }
 
+
 function MyFramebuffer(size, opt_depth) {
+  var faceTargets = [
+    gl.TEXTURE_CUBE_MAP_POSITIVE_X,
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
+    gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
+    gl.TEXTURE_CUBE_MAP_NEGATIVE_Z];
+
   this.size = size;
   this.depth = opt_depth;
   var tex = {
     texture : twgl.createTexture(gl, {
-      target : gl.TEXTURE_2D,
+      target : gl.TEXTURE_CUBE_MAP,
       width  : this.size,
       height : this.size,
       min    : gl.LINEAR,
@@ -178,7 +184,7 @@ function MyFramebuffer(size, opt_depth) {
     gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
         gl.COLOR_ATTACHMENT0,
-        gl.TEXTURE_2D,
+        faceTargets[4],
         tex.texture,
         0);
     if (this.depth) {
@@ -190,7 +196,7 @@ function MyFramebuffer(size, opt_depth) {
     }
     var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
     if (status != gl.FRAMEBUFFER_COMPLETE) {
-      throw("gl.checkFramebufferStatus() returned " + status);
+      throw("gl.checkFramebufferStatus() returned " + WebGLDebugUtils.glEnumToString(status));
     }
     this.framebuffers.push(fb);
   }
@@ -247,29 +253,51 @@ myFBO.unbind()
   var mat2 = m4.identity(new Float32Array(16));
   var mat3 = m4.identity(new Float32Array(16));
   
-  myRenderSet.addRenderable(quads)
-  // myRenderSet.addRenderable({
-  //   renderOrder: 10,
-  //   render : function (gl) {
-  //     gl.disable(gl.DEPTH_TEST);
-  //
-  //     myRenderSet.camera.computeMatrix()
-  //     m4.inverse(myRenderSet.camera.perspective, mat1);
-  //     m4.inverse(myRenderSet.camera.skyorientation, mat2);
-  //     m4.multiply(mat1, mat2, mat3);
-  //     uniforms.inverse_camera = mat3;
-  //
-  //     var geom = plate.getGeometry(gl);
-  //     plate.drawPrep(geom, uniforms);
-  //     geom.draw();
-  //
-  //     gl.enable(gl.DEPTH_TEST);
-  //   }
-  // })
   
+  myRenderSet.addRenderable({
+    before : function () {
+      gl.clearColor(0,0,0,0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    },
+    renderOrder : 0
+  })
+
+  myRenderSet.addRenderable({
+    renderOrder: 11,
+    render : function (gl) {
+      gl.disable(gl.DEPTH_TEST);
+      
+      gl.enable(gl.BLEND);
+      gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
+      gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
+
+      myRenderSet.camera.computeMatrix()
+      m4.inverse(myRenderSet.camera.perspective, mat1);
+      m4.inverse(myRenderSet.camera.skyorientation, mat2);
+      m4.multiply(mat1, mat2, mat3);
+      uniforms.inverse_camera = mat3;
+
+      var geom = plate.getGeometry(gl);
+      plate.drawPrep(geom, uniforms);
+      geom.draw();
+
+      gl.disable(gl.BLEND);
+      gl.enable(gl.DEPTH_TEST);
+    }
+  })
+  
+  myRenderSet.addRenderable(quads)
 
   screen.addRenderable({
-    renderOrder : 2,
+    before : function () {
+      gl.clearColor(0,0,0,0);
+      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    },
+    renderOrder : 0
+  })
+  
+  screen.addRenderable({
+    renderOrder : 20,
     render : function (gl) {
       myRenderSet.render(gl)
     }
@@ -286,13 +314,13 @@ myFBO.unbind()
     ) 
   }, function () {
     return (
-      '  gl_FragColor = texture2D(                              \n'+
+      '  gl_FragColor = textureCube(                            \n'+
       '      texture,                                           \n'+
-      '      vec2(v_pos.x, v_pos.y));                           \n'
+      '      vec3(v_pos.xyz / v_pos.w));                        \n'
     )
   })
   shader.attributes.position              = 'vec4';
-  shader.fragment_uniforms.texture        = 'sampler2D';
+  shader.fragment_uniforms.texture        = 'samplerCube';
   shader.vertex_uniforms.camera           = 'mat4';
   shader.varyings.v_pos                   = 'vec4';
   
@@ -306,7 +334,7 @@ myFBO.unbind()
   
   
   screen.addRenderable({
-    renderOrder : 3,
+    renderOrder : 30,
     render : function (gl) {
       gl.disable(gl.DEPTH_TEST);
       gl.enable(gl.BLEND);
