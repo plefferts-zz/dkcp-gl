@@ -39,6 +39,7 @@ function DkcpGl(options) {
       if (actions.length) {
         kb.applyActions(this.camera, actions, delta * f, theta * f)
         this.screen.beginFrameRendering(false)
+        this.screen.trigger('moved')
       }
     }.bind(this))
   }

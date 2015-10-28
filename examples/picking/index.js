@@ -29,11 +29,20 @@ var screen = main.screen;
 var gl     = main.screen.gl;
 
 function getRenderable() {
+  var identity = m4.identity(new Float32Array(16));
   return new Renderable({
     renderOrder : 10,
     getUniforms : function (renderSet) {
+      if (renderSet == screen) {
+        return {
+          camera : camera.computeMatrix(),
+          camera2 : identity
+        }
+      }
       return {
-        camera : renderSet == screen ? camera.computeMatrix() : renderSet.camera.computeMatrix()
+        camera : renderSet.camera.computeMatrix(),
+        camera2 : renderSet.camera2
+        
       }
     },
     factory : function () {
@@ -42,7 +51,7 @@ function getRenderable() {
       var colorAllocation = new Allocation.Float(maxColors, 4)
 
       var shader = new Shader(function () {
-        return '  gl_Position = camera * position; \n' + 
+        return '  gl_Position = camera2 * camera * position; \n' + 
                '  f_color = colors[int(color)]; \n'
       }, function () {
         return '  gl_FragColor = f_color ;\n'
@@ -51,6 +60,7 @@ function getRenderable() {
       shader.attributes.color      = 'float';
       shader.varyings.f_color      = 'vec4';
       shader.vertex_uniforms.camera = 'mat4';
+      shader.vertex_uniforms.camera2 = 'mat4';
       shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
 
       var m = new Model(this, shader, 100)
@@ -119,10 +129,19 @@ function MyRenderSet(framebuffers) {
 }
 util.inherits(MyRenderSet, RenderSet)
 
-MyRenderSet.prototype.render = function (gl) {
+MyRenderSet.prototype.render = function (gl, clickx, clicky) {
   for (var ff = 0; ff < 1; ++ff) {
     this.framebuffers.bind(ff);
     this.camera = main.camera
+    var zoom = Math.max(camera.frameWidth, camera.frameHeight);
+    var dst = new Float32Array(16)
+    m4.translate(m4.scaling([zoom, zoom, 1]), [
+      2 * (.5 - clickx / camera.frameWidth),
+      -2 * (.5 - clicky / camera.frameHeight),
+      0
+    ], dst)
+    this.camera2 = dst
+
     RenderSet.prototype.render.call(this, gl);
   }
   this.framebuffers.unbind();
@@ -192,7 +211,7 @@ MyFramebuffer.prototype.unbind = function() {
 };
 
 
-var myFBO = new MyFramebuffer(1024, true);
+var myFBO = new MyFramebuffer(2, true);
 myFBO.unbind()
 
 var myRenderSet;
@@ -312,13 +331,25 @@ var myRenderSet;
 
 screen.beginFrameRendering(false)
 
+var mousex, mousey;
+
+screen.on('moved', function () {
+  myRenderSet.render(gl, mousex, mousey)
+})
 
 function click(x, y) {
-  myRenderSet.render(gl)
-  console.log(Math.floor(x), Math.floor(y))
+  myRenderSet.render(gl, x - 1, y - 1)
+}
+function mousemove(x, y) {
+  myRenderSet.render(gl, mousex = x - 1, mousey = y - 1)
 }
 
 document.getElementById('canvas').addEventListener('click', function (e) {
   var rect = document.getElementById('canvas').getBoundingClientRect()
   click((e.clientX - rect.left) / rect.width * camera.frameWidth, (e.clientY - rect.top) / rect.height * camera.frameHeight)
+})
+
+document.getElementById('canvas').addEventListener('mousemove', function (e) {
+  var rect = document.getElementById('canvas').getBoundingClientRect()
+  mousemove((e.clientX - rect.left) / rect.width * camera.frameWidth, (e.clientY - rect.top) / rect.height * camera.frameHeight)
 })
