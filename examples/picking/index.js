@@ -249,7 +249,21 @@ var myRenderSet;
     },
     renderOrder : 0
   })
-
+  
+  var lastarr;
+  myRenderSet.addRenderable({
+    before : function () {
+      var arr = new Uint8Array(4 * 4)
+      gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
+      arr = Array.prototype.slice.call(arr, 0, 3)
+      if (arr.join(',') != lastarr) {
+        console.log(arr)
+      }
+      lastarr = arr.join(',')
+    },
+    renderOrder : 999
+  })
+  
   myRenderSet.addRenderable({
     renderOrder: 11,
     render : function (gl) {
