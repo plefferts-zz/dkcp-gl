@@ -160,7 +160,7 @@ function MyFramebuffer(size, opt_depth) {
   this.depth = opt_depth;
   var tex = {
     texture : twgl.createTexture(gl, {
-      target : gl.TEXTURE_CUBE_MAP,
+      target : gl.TEXTURE_2D,
       width  : this.size,
       height : this.size,
       min    : gl.LINEAR,
@@ -184,7 +184,7 @@ function MyFramebuffer(size, opt_depth) {
     gl.framebufferTexture2D(
         gl.FRAMEBUFFER,
         gl.COLOR_ATTACHMENT0,
-        faceTargets[4],
+        gl.TEXTURE_2D,
         tex.texture,
         0);
     if (this.depth) {
@@ -309,18 +309,18 @@ myFBO.unbind()
   
   var shader = new Shader(function () {
     return (
-      '  v_pos       = camera * position; \n' +
-      '  gl_Position = vec4(position.x, position.y, 0.5, 1.0); \n'
+      '  v_pos       = position; \n' +
+      '  gl_Position = camera * vec4(position.x / 4.0, position.y / 4.0, 1.5, 1.0); \n'
     ) 
   }, function () {
     return (
-      '  gl_FragColor = textureCube(                            \n'+
-      '      texture,                                           \n'+
-      '      vec3(v_pos.xyz / v_pos.w));                        \n'
+      '  gl_FragColor = texture2D(                            \n'+
+      '      texture,                                         \n'+
+      '      vec2(v_pos.x / 2.0 + 0.5, v_pos.y / 2.0 + 0.5)); \n'
     )
   })
   shader.attributes.position              = 'vec4';
-  shader.fragment_uniforms.texture        = 'samplerCube';
+  shader.fragment_uniforms.texture        = 'sampler2D';
   shader.vertex_uniforms.camera           = 'mat4';
   shader.varyings.v_pos                   = 'vec4';
   
@@ -341,8 +341,8 @@ myFBO.unbind()
       gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
       gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
       camera.computeMatrix()
-      m4.inverse(camera.skymatrix, inverse);
-      uniforms.camera = inverse;
+      // m4.inverse(camera.skymatrix, inverse);
+      uniforms.camera = camera.matrix;
       uniforms.texture = plate.textureData.texture.texture;
       var geom = plate.getGeometry(gl);
       plate.drawPrep(geom, uniforms);
