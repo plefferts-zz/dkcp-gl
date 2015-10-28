@@ -31,9 +31,9 @@ var gl     = main.screen.gl;
 function getRenderable() {
   return new Renderable({
     renderOrder : 10,
-    getUniforms : function () {
+    getUniforms : function (renderSet) {
       return {
-        camera : camera.computeMatrix()
+        camera : renderSet == screen ? camera.computeMatrix() : renderSet.camera.computeMatrix()
       }
     },
     factory : function () {
@@ -114,24 +114,6 @@ quads.add({
 function MyRenderSet(framebuffers) {
 
   this.framebuffers = framebuffers;
-  this.cameras = [];
-  this.camera = null;
-  
-  for (var ff = 0; ff < 1; ++ff) {
-    var c;
-    this.cameras.push(c = new BasicCamera(framebuffers.size, framebuffers.size, .1, 4096));
-    c.setFOV(90, true);
-  }
-
-  this.camera = c;
-  this.camera.rotateBy(0, Math.PI, 0);
-
-  // this.cameras[2].rotateBy(0, Math.PI/2, 0);
-  // this.cameras[3].rotateBy(0, -Math.PI/2, 0);
-  // this.cameras[5].rotateBy(0, Math.PI, Math.PI);
-  // this.cameras[1].rotateBy(0, Math.PI, -Math.PI/2);
-  // this.cameras[4].rotateBy(0, Math.PI, 0);
-  // this.cameras[0].rotateBy(0, Math.PI, Math.PI/2);
   
   RenderSet.call(this)
 }
@@ -140,7 +122,7 @@ util.inherits(MyRenderSet, RenderSet)
 MyRenderSet.prototype.render = function (gl) {
   for (var ff = 0; ff < 1; ++ff) {
     this.framebuffers.bind(ff);
-    this.camera = this.cameras[ff];
+    this.camera = main.camera
     RenderSet.prototype.render.call(this, gl);
   }
   this.framebuffers.unbind();
@@ -148,14 +130,6 @@ MyRenderSet.prototype.render = function (gl) {
 
 
 function MyFramebuffer(size, opt_depth) {
-  var faceTargets = [
-    gl.TEXTURE_CUBE_MAP_POSITIVE_X,
-    gl.TEXTURE_CUBE_MAP_NEGATIVE_X,
-    gl.TEXTURE_CUBE_MAP_POSITIVE_Y,
-    gl.TEXTURE_CUBE_MAP_NEGATIVE_Y,
-    gl.TEXTURE_CUBE_MAP_POSITIVE_Z,
-    gl.TEXTURE_CUBE_MAP_NEGATIVE_Z];
-
   this.size = size;
   this.depth = opt_depth;
   var tex = {
@@ -221,29 +195,24 @@ MyFramebuffer.prototype.unbind = function() {
 var myFBO = new MyFramebuffer(1024, true);
 myFBO.unbind()
 
+var myRenderSet;
+
 ;(function () {
 
   
-  var myRenderSet = new MyRenderSet(myFBO)
+ myRenderSet = new MyRenderSet(myFBO)
 
   var shader = new Shader(function () {
     return (
-      '  gl_Position = position; \n' +
-      '  v_position  = inverse_camera * position; \n'
+      '  gl_Position = position; \n'
     )
   }, function () {
     return (
-      '  gl_FragColor = vec4(                                               \n' +
-      '   (v_position.x + 1.0) / 2.0,                                       \n' +
-      '   (v_position.y + 1.0) / 2.0,                                       \n' +
-      '   (v_position.z + 1.0) / 2.0,                                       \n' +
-      '   1.0);                                                             \n'
+      '  gl_FragColor = vec4(0.5,0.5,0.5,1.0); \n'
     )
     
   })
   shader.attributes.position    = 'vec4';
-  shader.vertex_uniforms.inverse_camera = 'mat4';
-  shader.varyings.v_position    = 'vec4';
 
   var plate = new Plate(shader);
   plate.add({z: -.5})
@@ -271,12 +240,6 @@ myFBO.unbind()
       gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
       gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
 
-      myRenderSet.camera.computeMatrix()
-      m4.inverse(myRenderSet.camera.perspective, mat1);
-      m4.inverse(myRenderSet.camera.skyorientation, mat2);
-      m4.multiply(mat1, mat2, mat3);
-      uniforms.inverse_camera = mat3;
-
       var geom = plate.getGeometry(gl);
       plate.drawPrep(geom, uniforms);
       geom.draw();
@@ -296,13 +259,6 @@ myFBO.unbind()
     renderOrder : 0
   })
   
-  screen.addRenderable({
-    renderOrder : 20,
-    render : function (gl) {
-      myRenderSet.render(gl)
-    }
-  })
-
 }())
   
 ;(function () {
@@ -358,6 +314,7 @@ screen.beginFrameRendering(false)
 
 
 function click(x, y) {
+  myRenderSet.render(gl)
   console.log(Math.floor(x), Math.floor(y))
 }
 
