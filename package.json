@@ -11,6 +11,7 @@
   "license": "Proprietary",
   "devDependencies": {
     "glslmin": "0.0.0",
+    "inherits": "^2.0.1",
     "webpack": "^1.12.2",
     "xtend": "^4.0.0"
   },

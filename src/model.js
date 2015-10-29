@@ -118,12 +118,13 @@ Model.prototype.getGeometry = function (gl) {
   this.bufferInfo = this.bufferInfo || twgl.createBufferInfoFromArrays(gl, this.getAttributeBuffers());
   return this.geometry = {
     drawPrep : function (uniforms) {
-      var programInfo = this.shader.getProgram(gl)
+      var programInfo = this.shader.getProgram(gl, uniforms)
       gl.useProgram(programInfo.program);
       twgl.setUniforms(programInfo, uniforms);
+      this.uniforms = uniforms;
     }.bind(this),
     draw : function () {
-      var programInfo = this.shader.getProgram(gl)
+      var programInfo = this.shader.getProgram(gl, this.uniforms)
       twgl.setBuffersAndAttributes(gl, programInfo, this.bufferInfo);
       twgl.drawBufferInfo(gl, gl.TRIANGLES, this.bufferInfo);
     }.bind(this),

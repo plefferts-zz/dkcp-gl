@@ -49,7 +49,7 @@ Shader.prototype.getFragmentSource = function () {
   return src;
 }
 
-Shader.prototype.getProgram = function (gl) {
+Shader.prototype.getProgram = function (gl, uniforms) {
   if (this.program)
     return this.program
   // console.log(this.getVertexSource(), this.getFragmentSource())

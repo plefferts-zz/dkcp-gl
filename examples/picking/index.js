@@ -9,7 +9,7 @@ var shaders           = DkcpGl.shaders
 var Shader            = DkcpGl.Shader
 var Allocation        = DkcpGl.Allocation
 
-var util        = require('util')
+var inherits    = require('inherits')
 var RenderSet   = DkcpGl.RenderSet
 var BasicCamera = DkcpGl.camera.BasicCamera
 
@@ -27,6 +27,80 @@ var main = new DkcpGl({
 var camera = main.camera;
 var screen = main.screen;
 var gl     = main.screen.gl;
+
+var HitColorAllocation = function (max) {
+  Allocation.Float.call(this, max, 4)
+}
+inherits(HitColorAllocation, Allocation.Float)
+
+HitColorAllocation.prototype.add = function (item, owner) {
+  return Allocation.Float.prototype.add.call(this, item, owner, function () {
+    return item.color
+  })
+}
+
+var HitTestManager = function (max) {
+  this.attribute_name     = 'hit_color';
+  this.uniform_name       = 'hit_colors';
+  this.hitColorAllocation = new HitColorAllocation(max);
+}
+
+HitTestManager.prototype.mixinModel = function (model) {
+  var a = this.attribute_name;
+  var allocation = this.hitColorAllocation
+  model.addAttribute(a, 1, 'Float32Array', function (i, item) {
+    return [
+      allocation.add(item[a], item)
+    ]
+  });
+  model.uniforms[this.uniform_name] = this.hitColorAllocation.buffer;
+}
+
+var HitTestShader = function (hitColorAllocation, getVertexBodySource, getFragmentBodySource) {
+  Shader.call(this,
+      this.wrapVertexSource(getVertexBodySource),
+      this.wrapFragmentSource(getFragmentBodySource))
+
+  this.hitColorAllocation = hitColorAllocation
+  this.varyings.f_hit_color  = 'vec4';
+  this.attributes.hit_color  = 'float';
+  this.fragment_uniforms.hit_test = 'int';
+  this.vertex_uniforms['hit_colors[' + this.hitColorAllocation.slots.max + ']'] = 'vec4';
+}
+inherits(HitTestShader, Shader)
+
+HitTestShader.prototype.wrapVertexSource = function (fn) {
+  return function () {
+    return fn() + '\n  f_hit_color = hit_colors[int(hit_color)];'
+  }
+};
+
+HitTestShader.prototype.wrapFragmentSource = function (fn) {
+  return function () {
+    if (this.hit_test) {
+      return ' gl_FragColor = f_hit_color;  \n'
+    }
+    return fn();
+  }
+};
+
+HitTestShader.prototype.getProgram = function (gl, uniforms) {
+  if (uniforms.hit_test) {
+    if (this.hit_test_program)
+      return this.hit_test_program
+    
+    this.hit_test = true
+    return this.hit_test_program = twgl.createProgramInfo(
+      gl,
+      [this.getVertexSource(), this.getFragmentSource()]
+    )
+  }
+  
+  this.hit_test = false
+  return Shader.prototype.getProgram.call(this, gl, uniforms)
+};
+
+var hitTestManager = new HitTestManager(100);
 
 function getRenderable() {
   var identity = m4.identity(new Float32Array(16));
@@ -52,28 +126,23 @@ function getRenderable() {
       var maxColors = 100
       var colorAllocation    = new Allocation.Float(maxColors, 4)
       
-      var shader = new Shader(function () {
+      var shader = new HitTestShader(hitTestManager.hitColorAllocation, function () {
         return '  gl_Position = camera2 * camera * position; \n' + 
-               '  f_hit_color = colors[int(hit_color)];      \n' + 
                '  f_color = colors[int(color)];              \n'
       }, function () {
-        return '  if (hit_test > 0) {            \n' + 
-               '    gl_FragColor = f_hit_color;  \n' +
-               '   } else {                      \n' +
-               '    gl_FragColor = f_color;      \n' +
-               '   }                             \n'
+        return '  gl_FragColor = f_color; \n'
       })
-      shader.attributes.position   = 'vec4';
-      shader.attributes.color      = 'float';
-      shader.varyings.f_color      = 'vec4';
-      shader.varyings.f_hit_color  = 'vec4';
-      shader.attributes.hit_color  = 'float';
-      shader.fragment_uniforms.hit_test = 'int';
-      shader.vertex_uniforms.camera = 'mat4';
+
+      shader.attributes.position     = 'vec4';
+      shader.attributes.color        = 'float';
+      shader.varyings.f_color        = 'vec4';
+      shader.vertex_uniforms.camera  = 'mat4';
       shader.vertex_uniforms.camera2 = 'mat4';
       shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
 
       var m = new Model(this, shader, 100)
+      hitTestManager.mixinModel(m)
+      
       m.addAttribute('position', 4, 'Float32Array', function (i, item) {
         return item.vertices[i]
       });
@@ -86,14 +155,6 @@ function getRenderable() {
         ]
       });
 
-      m.addAttribute('hit_color', 1, 'Float32Array', function (i, item) {
-        return [
-          colorAllocation.add(item.hit_color, item, function () {
-            return item.hit_color.color
-          })
-        ]
-      });
-  
       m.uniforms.colors = colorAllocation.buffer;
   
       return m
@@ -153,7 +214,7 @@ function MyRenderSet(framebuffers) {
   
   RenderSet.call(this)
 }
-util.inherits(MyRenderSet, RenderSet)
+inherits(MyRenderSet, RenderSet)
 
 MyRenderSet.prototype.render = function (gl, clickx, clicky) {
   for (var ff = 0; ff < 1; ++ff) {
