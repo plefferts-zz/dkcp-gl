@@ -20,9 +20,13 @@ Renderable.prototype.render = function (gl, renderSet) {
   fn = this.options.before
   fn && fn.call(this)
 
+  fn = renderSet.getUniforms
+  
+  var uniforms = fn ? fn.call(renderSet) : {}
+
   fn = this.options.getUniforms
   
-  var uniforms = fn ? fn.call(this, renderSet) : {}
+  uniforms = fn ? fn.call(this, uniforms, renderSet) : uniforms
   
   fn = this.options.render || this.renderModels
   fn.call(this, gl, uniforms)

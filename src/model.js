@@ -103,12 +103,20 @@ Model.prototype.remove = function () {
   // }
 }
 
-Model.prototype.drawPrep = function (geom, uniforms) {
-  for(var i in uniforms) {
-    if (uniforms.hasOwnProperty(i))
-      this.uniforms[i] = uniforms[i]
+Model.prototype.drawPrep = function (geom, more_uniforms) {
+  var uniforms = {}
+
+  for(var i in this.uniforms) {
+    if (this.uniforms.hasOwnProperty(i))
+      uniforms[i] = this.uniforms[i]
   }
-  geom.drawPrep(this.uniforms);
+
+  for(var i in more_uniforms) {
+    if (more_uniforms.hasOwnProperty(i))
+      uniforms[i] = more_uniforms[i]
+  }
+
+  geom.drawPrep(uniforms);
 }
 
 Model.prototype.getGeometry = function (gl) {
@@ -121,10 +129,10 @@ Model.prototype.getGeometry = function (gl) {
       var programInfo = this.shader.getProgram(gl, uniforms)
       gl.useProgram(programInfo.program);
       twgl.setUniforms(programInfo, uniforms);
-      this.uniforms = uniforms;
+      this.render_uniforms = uniforms;
     }.bind(this),
     draw : function () {
-      var programInfo = this.shader.getProgram(gl, this.uniforms)
+      var programInfo = this.shader.getProgram(gl, this.render_uniforms)
       twgl.setBuffersAndAttributes(gl, programInfo, this.bufferInfo);
       twgl.drawBufferInfo(gl, gl.TRIANGLES, this.bufferInfo);
     }.bind(this),

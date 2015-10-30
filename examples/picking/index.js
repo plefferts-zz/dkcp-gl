@@ -29,28 +29,19 @@ function getRenderable() {
   var identity = m4.identity(new Float32Array(16));
   return new Renderable({
     renderOrder : 10,
-    getUniforms : function (renderSet) {
-      if (renderSet == screen) {
-        return {
-          camera : camera.computeMatrix(),
-          camera2 : identity,
-          hit_test : 0
-        }
-      }
-      return {
-        camera : camera.computeMatrix(),
-        camera2 : renderSet.camera2,
-        hit_test : 1
-        
-      }
+    getUniforms : function (uniforms, renderSet) {
+      uniforms.camera = camera.computeMatrix()
+      return uniforms
     },
     factory : function () {
       
       var maxColors = 100
       var colorAllocation    = new Allocation.Float(maxColors, 4)
       
-      var shader = new picking.HitTestShader(hitTestManager.hitColorAllocation, function () {
-        return '  gl_Position = camera2 * camera * position; \n' + 
+      var shader = new picking.HitTestShader(hitTestManager.hitColorAllocation, function (hit_test) {
+        var hit_test_zoom_matrix = hit_test ? 'hit_test_zoom_matrix * ' : '';
+
+        return '  gl_Position = ' + hit_test_zoom_matrix + 'camera * position; \n' + 
                '  f_color = colors[int(color)];              \n'
       }, function () {
         return '  gl_FragColor = f_color; \n'
@@ -60,10 +51,10 @@ function getRenderable() {
       shader.attributes.color        = 'float';
       shader.varyings.f_color        = 'vec4';
       shader.vertex_uniforms.camera  = 'mat4';
-      shader.vertex_uniforms.camera2 = 'mat4';
       shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
 
       var m = new Model(this, shader, 100)
+
       hitTestManager.mixinModel(m)
       
       m.addAttribute('position', 4, 'Float32Array', function (i, item) {
@@ -109,6 +100,8 @@ screen.addRenderable({
 
 var quads  = getRenderable()
 screen.addRenderable(quads)
+hitTestManager.renderSet.addRenderable(quads);
+
 quads.add({
   color : red,
   hit_area : 'red',
@@ -134,36 +127,7 @@ quads.add({
   vertices : square(0, 0, .7, .01)
 })
 
-var hitTestRenderSet;
 
-;(function () {
-
-  hitTestRenderSet = hitTestManager.renderSet
-  hitTestRenderSet.addRenderable({
-    before : function () {
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    },
-    renderOrder : 0
-  })
-  
-  var lastarr;
-  hitTestRenderSet.addRenderable({
-    before : function () {
-      var arr = new Uint8Array(4 * 4)
-      gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
-      arr = Array.prototype.slice.call(arr, 0, 3)
-      if (arr.join(',') != lastarr) {
-        console.log(hitTestManager.hitAreaFor(arr))
-      }
-      lastarr = arr.join(',')
-    },
-    renderOrder : 999
-  })
-  
-  hitTestRenderSet.addRenderable(quads);
-
-}())
   
 ;(function () {
   
@@ -184,8 +148,9 @@ var hitTestRenderSet;
   shader.vertex_uniforms.camera           = 'mat4';
   shader.varyings.v_pos                   = 'vec4';
   
+  var texture = hitTestManager.renderSet.framebuffers.texture
   var plate = new Plate(shader);
-  plate.textureData = {texture : hitTestRenderSet.framebuffers.texture}
+  plate.textureData = {texture : texture}
   plate.add({z: 1})
   
   var uniforms = {};
@@ -198,7 +163,7 @@ var hitTestRenderSet;
       gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
       gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
       uniforms.camera = camera.computeMatrix();
-      uniforms.texture = plate.textureData.texture.texture;
+      uniforms.texture = texture.texture;
       var geom = plate.getGeometry(gl);
       plate.drawPrep(geom, uniforms);
       geom.draw();
@@ -214,14 +179,14 @@ screen.beginFrameRendering(false)
 var mousex, mousey;
 
 screen.on('moved', function () {
-  hitTestRenderSet.render(gl, camera, mousex, mousey)
+  hitTestManager.renderSet.render(gl, camera, mousex, mousey)
 })
 
 function click(x, y) {
-  hitTestRenderSet.render(gl, camera, x - 1, y - 1)
+  hitTestManager.renderSet.render(gl, camera, x - 1, y - 1)
 }
 function mousemove(x, y) {
-  hitTestRenderSet.render(gl, camera, mousex = x - 1, mousey = y - 1)
+  hitTestManager.renderSet.render(gl, camera, mousex = x - 1, mousey = y - 1)
 }
 
 document.getElementById('canvas').addEventListener('click', function (e) {
