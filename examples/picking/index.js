@@ -1,6 +1,7 @@
 var twgl              = require('../../lib/twgl')
 var m4                = require('../../lib/twgl').m4
 var DkcpGl            = require('../../src/dkcp-gl')
+var picking           = require('../../src/picking')
 
 var Renderable        = DkcpGl.Renderable
 var Model             = DkcpGl.Model
@@ -9,9 +10,8 @@ var shaders           = DkcpGl.shaders
 var Shader            = DkcpGl.Shader
 var Allocation        = DkcpGl.Allocation
 
-var inherits    = require('inherits')
-var RenderSet   = DkcpGl.RenderSet
-var BasicCamera = DkcpGl.camera.BasicCamera
+var RenderSet         = DkcpGl.RenderSet
+var BasicCamera       = DkcpGl.camera.BasicCamera
 
 var main = new DkcpGl({
   canvas : document.getElementById('canvas'),
@@ -28,90 +28,7 @@ var camera = main.camera;
 var screen = main.screen;
 var gl     = main.screen.gl;
 
-var HitColorAllocation = function (max) {
-  Allocation.Float.call(this, max, 4)
-}
-inherits(HitColorAllocation, Allocation.Float)
-
-HitColorAllocation.prototype.add = function (item, owner) {
-  return Allocation.Float.prototype.add.call(this, item, owner, function (index) {
-    var b = (index >>>  0) % 0x100;
-    var g = (index >>>  8) % 0x100;
-    var r = (index >>> 16) % 0x100;
-    return [r / 255, g / 255, b / 255, 1]
-  })
-}
-
-HitColorAllocation.prototype.hitAreaFor = function (arr) {
-  var c = arr[0] * 0x10000 + arr[1] * 0x100 + arr[2];
-  return this.members[c]
-}
-
-var HitTestManager = function (max) {
-  this.attribute_name     = 'hit_color';
-  this.uniform_name       = 'hit_colors';
-  this.hitColorAllocation = new HitColorAllocation(max);
-}
-
-HitTestManager.prototype.hitAreaFor = function (arr) {
-  return this.hitColorAllocation.hitAreaFor(arr)
-}
-
-HitTestManager.prototype.mixinModel = function (model) {
-  var allocation = this.hitColorAllocation
-  model.addAttribute(this.attribute_name, 1, 'Float32Array', function (i, item) {
-    return [
-      allocation.add({id: item.hit_area}, item)
-    ]
-  });
-  model.uniforms[this.uniform_name] = this.hitColorAllocation.buffer;
-}
-
-var HitTestShader = function (hitColorAllocation, getVertexBodySource, getFragmentBodySource) {
-  Shader.call(this,
-      this.wrapVertexSource(getVertexBodySource),
-      this.wrapFragmentSource(getFragmentBodySource))
-
-  this.hitColorAllocation = hitColorAllocation
-  this.varyings.f_hit_color  = 'vec4';
-  this.attributes.hit_color  = 'float';
-  this.fragment_uniforms.hit_test = 'int';
-  this.vertex_uniforms['hit_colors[' + this.hitColorAllocation.slots.max + ']'] = 'vec4';
-}
-inherits(HitTestShader, Shader)
-
-HitTestShader.prototype.wrapVertexSource = function (fn) {
-  return function () {
-    return fn() + '\n  f_hit_color = hit_colors[int(hit_color)];'
-  }
-};
-
-HitTestShader.prototype.wrapFragmentSource = function (fn) {
-  return function () {
-    if (this.hit_test) {
-      return ' gl_FragColor = f_hit_color;  \n'
-    }
-    return fn();
-  }
-};
-
-HitTestShader.prototype.getProgram = function (gl, uniforms) {
-  if (uniforms.hit_test) {
-    if (this.hit_test_program)
-      return this.hit_test_program
-    
-    this.hit_test = true
-    return this.hit_test_program = twgl.createProgramInfo(
-      gl,
-      [this.getVertexSource(), this.getFragmentSource()]
-    )
-  }
-  
-  this.hit_test = false
-  return Shader.prototype.getProgram.call(this, gl, uniforms)
-};
-
-var hitTestManager = new HitTestManager(100);
+var hitTestManager = new picking.HitTestManager(gl, 100);
 
 function getRenderable() {
   var identity = m4.identity(new Float32Array(16));
@@ -126,7 +43,7 @@ function getRenderable() {
         }
       }
       return {
-        camera : renderSet.camera.computeMatrix(),
+        camera : camera.computeMatrix(),
         camera2 : renderSet.camera2,
         hit_test : 1
         
@@ -137,7 +54,7 @@ function getRenderable() {
       var maxColors = 100
       var colorAllocation    = new Allocation.Float(maxColors, 4)
       
-      var shader = new HitTestShader(hitTestManager.hitColorAllocation, function () {
+      var shader = new picking.HitTestShader(hitTestManager.hitColorAllocation, function () {
         return '  gl_Position = camera2 * camera * position; \n' + 
                '  f_color = colors[int(color)];              \n'
       }, function () {
@@ -214,98 +131,12 @@ quads.add({
   vertices : square(0, 0, .7, .01)
 })
 
-function HitTestRenderSet(framebuffers) {
-  this.framebuffers = new HitTestFrameBuffer(2, true);
-  this.framebuffers.unbind()
-  
-  RenderSet.call(this)
-}
-inherits(HitTestRenderSet, RenderSet)
-
-HitTestRenderSet.prototype.render = function (gl, clickx, clicky) {
-  this.framebuffers.bind();
-  this.camera = main.camera
-  var zoom = Math.max(camera.frameWidth, camera.frameHeight);
-  var dst = new Float32Array(16)
-  m4.translate(m4.scaling([zoom, zoom, 1]), [
-    2 * (.5 - clickx / camera.frameWidth),
-    -2 * (.5 - clicky / camera.frameHeight),
-    0
-  ], dst)
-  this.camera2 = dst
-
-  RenderSet.prototype.render.call(this, gl);
-  this.framebuffers.unbind();
-}
-
-
-function HitTestFrameBuffer(size, opt_depth) {
-  this.size = size;
-  this.depth = opt_depth;
-  var tex = {
-    texture : twgl.createTexture(gl, {
-      target : gl.TEXTURE_2D,
-      width  : this.size,
-      height : this.size,
-      min    : gl.LINEAR,
-      mag    : gl.LINEAR,
-      format : gl.RGBA,
-      type   : gl.UNSIGNED_BYTE,
-      wrapS  : gl.CLAMP_TO_EDGE,
-      wrapT  : gl.CLAMP_TO_EDGE
-    })
-  }
-  if (this.depth) {
-    var db = gl.createRenderbuffer();
-    gl.bindRenderbuffer(gl.RENDERBUFFER, db);
-    gl.renderbufferStorage(
-        gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.size, this.size);
-  }
-
-  var fb = gl.createFramebuffer();
-  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-  gl.framebufferTexture2D(
-      gl.FRAMEBUFFER,
-      gl.COLOR_ATTACHMENT0,
-      gl.TEXTURE_2D,
-      tex.texture,
-      0);
-  if (this.depth) {
-    gl.framebufferRenderbuffer(
-        gl.FRAMEBUFFER,
-        gl.DEPTH_ATTACHMENT,
-        gl.RENDERBUFFER,
-        db);
-  }
-  var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-  if (status != gl.FRAMEBUFFER_COMPLETE) {
-    throw("gl.checkFramebufferStatus() returned " + WebGLDebugUtils.glEnumToString(status));
-  }
-  this.framebuffer = fb;
-  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
-  this.texture = tex;
-}
-
-HitTestFrameBuffer.prototype.bind = function() {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
-  gl.viewport(0, 0, this.size, this.size);
-};
-
-HitTestFrameBuffer.prototype.unbind = function() {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
-  gl.viewport(
-      0, 0,
-      gl.drawingBufferWidth || gl.canvas.width,
-      gl.drawingBufferHeight || gl.canvas.height);
-};
-
-
 var hitTestRenderSet;
 
 ;(function () {
 
   
- hitTestRenderSet = new HitTestRenderSet()
+ hitTestRenderSet = hitTestManager.renderSet
 
   var shader = new Shader(function () {
     return (
@@ -434,14 +265,14 @@ screen.beginFrameRendering(false)
 var mousex, mousey;
 
 screen.on('moved', function () {
-  hitTestRenderSet.render(gl, mousex, mousey)
+  hitTestRenderSet.render(gl, camera, mousex, mousey)
 })
 
 function click(x, y) {
-  hitTestRenderSet.render(gl, x - 1, y - 1)
+  hitTestRenderSet.render(gl, camera, x - 1, y - 1)
 }
 function mousemove(x, y) {
-  hitTestRenderSet.render(gl, mousex = x - 1, mousey = y - 1)
+  hitTestRenderSet.render(gl, camera, mousex = x - 1, mousey = y - 1)
 }
 
 document.getElementById('canvas').addEventListener('click', function (e) {
