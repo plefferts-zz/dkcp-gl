@@ -34,9 +34,17 @@ var HitColorAllocation = function (max) {
 inherits(HitColorAllocation, Allocation.Float)
 
 HitColorAllocation.prototype.add = function (item, owner) {
-  return Allocation.Float.prototype.add.call(this, item, owner, function () {
-    return item.color
+  return Allocation.Float.prototype.add.call(this, item, owner, function (index) {
+    var b = (index >>>  0) % 0x100;
+    var g = (index >>>  8) % 0x100;
+    var r = (index >>> 16) % 0x100;
+    return [r / 255, g / 255, b / 255, 1]
   })
+}
+
+HitColorAllocation.prototype.hitAreaFor = function (arr) {
+  var c = arr[0] * 0x10000 + arr[1] * 0x100 + arr[2];
+  return this.members[c]
 }
 
 var HitTestManager = function (max) {
@@ -45,12 +53,15 @@ var HitTestManager = function (max) {
   this.hitColorAllocation = new HitColorAllocation(max);
 }
 
+HitTestManager.prototype.hitAreaFor = function (arr) {
+  return this.hitColorAllocation.hitAreaFor(arr)
+}
+
 HitTestManager.prototype.mixinModel = function (model) {
-  var a = this.attribute_name;
   var allocation = this.hitColorAllocation
-  model.addAttribute(a, 1, 'Float32Array', function (i, item) {
+  model.addAttribute(this.attribute_name, 1, 'Float32Array', function (i, item) {
     return [
-      allocation.add(item[a], item)
+      allocation.add({id: item.hit_area}, item)
     ]
   });
   model.uniforms[this.uniform_name] = this.hitColorAllocation.buffer;
@@ -175,35 +186,30 @@ var red     = {id: 'red',     color: [1, 0, 0, 1]}
 var green   = {id: 'green',   color: [0, 1, 0, 1]}
 var blue    = {id: 'blue',    color: [0, 0, 1, 1]}
 var white   = {id: 'white',   color: [1, 1, 1, 1]}
-var yellow  = {id: 'yellow',  color: [1, 1, 0, 1]}
-var cyan    = {id: 'cyan',    color: [0, 1, 1, 1]}
-var magenta = {id: 'magenta', color: [1, 0, 1, 1]}
-var black   = {id: 'black',   color: [0, 0, 0, 1]}
 
-  
 var quads  = getRenderable()
 screen.addRenderable(quads)
 quads.add({
   color : red,
-  hit_color : cyan,
+  hit_area : 'red',
   allocations : {},
   vertices : square(.25, 0, .7, .05)
 })
 quads.add({
   color : green,
-  hit_color : magenta,
+  hit_area : 'green',
   allocations : {},
   vertices : square(0, .25, .7, .05)
 })
 quads.add({
   color : blue,
-  hit_color : yellow,
+  hit_area : 'blue',
   allocations : {},
   vertices : square(0, 0, .9, .05)
 })
 quads.add({
   color : white,
-  hit_color : black,
+  hit_area : 'white',
   allocations : {},
   vertices : square(0, 0, .7, .01)
 })
@@ -344,7 +350,7 @@ var myRenderSet;
       gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
       arr = Array.prototype.slice.call(arr, 0, 3)
       if (arr.join(',') != lastarr) {
-        console.log(arr)
+        console.log(hitTestManager.hitAreaFor(arr))
       }
       lastarr = arr.join(',')
     },

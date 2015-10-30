@@ -59,7 +59,7 @@ Allocation.prototype.add = function (item, owner, fn) {
     this.members[index] = item;
     this.indexes[item.id] = index;
     this.slots.increment();
-    this.write(index, fn());
+    this.write(index, fn(index));
     item.on && item.on('change', this.onChange)
   }
   this.owners.add(index, owner);
