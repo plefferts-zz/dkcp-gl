@@ -214,34 +214,32 @@ quads.add({
   vertices : square(0, 0, .7, .01)
 })
 
-function MyRenderSet(framebuffers) {
-
-  this.framebuffers = framebuffers;
+function HitTestRenderSet(framebuffers) {
+  this.framebuffers = new HitTestFrameBuffer(2, true);
+  this.framebuffers.unbind()
   
   RenderSet.call(this)
 }
-inherits(MyRenderSet, RenderSet)
+inherits(HitTestRenderSet, RenderSet)
 
-MyRenderSet.prototype.render = function (gl, clickx, clicky) {
-  for (var ff = 0; ff < 1; ++ff) {
-    this.framebuffers.bind(ff);
-    this.camera = main.camera
-    var zoom = Math.max(camera.frameWidth, camera.frameHeight);
-    var dst = new Float32Array(16)
-    m4.translate(m4.scaling([zoom, zoom, 1]), [
-      2 * (.5 - clickx / camera.frameWidth),
-      -2 * (.5 - clicky / camera.frameHeight),
-      0
-    ], dst)
-    this.camera2 = dst
+HitTestRenderSet.prototype.render = function (gl, clickx, clicky) {
+  this.framebuffers.bind();
+  this.camera = main.camera
+  var zoom = Math.max(camera.frameWidth, camera.frameHeight);
+  var dst = new Float32Array(16)
+  m4.translate(m4.scaling([zoom, zoom, 1]), [
+    2 * (.5 - clickx / camera.frameWidth),
+    -2 * (.5 - clicky / camera.frameHeight),
+    0
+  ], dst)
+  this.camera2 = dst
 
-    RenderSet.prototype.render.call(this, gl);
-  }
+  RenderSet.prototype.render.call(this, gl);
   this.framebuffers.unbind();
 }
 
 
-function MyFramebuffer(size, opt_depth) {
+function HitTestFrameBuffer(size, opt_depth) {
   this.size = size;
   this.depth = opt_depth;
   var tex = {
@@ -263,39 +261,37 @@ function MyFramebuffer(size, opt_depth) {
     gl.renderbufferStorage(
         gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.size, this.size);
   }
-  this.framebuffers = [];
-  for (var ff = 0; ff < 1; ++ff) {
-    var fb = gl.createFramebuffer();
-    gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
-    gl.framebufferTexture2D(
+
+  var fb = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+  gl.framebufferTexture2D(
+      gl.FRAMEBUFFER,
+      gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D,
+      tex.texture,
+      0);
+  if (this.depth) {
+    gl.framebufferRenderbuffer(
         gl.FRAMEBUFFER,
-        gl.COLOR_ATTACHMENT0,
-        gl.TEXTURE_2D,
-        tex.texture,
-        0);
-    if (this.depth) {
-      gl.framebufferRenderbuffer(
-          gl.FRAMEBUFFER,
-          gl.DEPTH_ATTACHMENT,
-          gl.RENDERBUFFER,
-          db);
-    }
-    var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
-    if (status != gl.FRAMEBUFFER_COMPLETE) {
-      throw("gl.checkFramebufferStatus() returned " + WebGLDebugUtils.glEnumToString(status));
-    }
-    this.framebuffers.push(fb);
+        gl.DEPTH_ATTACHMENT,
+        gl.RENDERBUFFER,
+        db);
   }
+  var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+  if (status != gl.FRAMEBUFFER_COMPLETE) {
+    throw("gl.checkFramebufferStatus() returned " + WebGLDebugUtils.glEnumToString(status));
+  }
+  this.framebuffer = fb;
   gl.bindRenderbuffer(gl.RENDERBUFFER, null);
   this.texture = tex;
 }
 
-MyFramebuffer.prototype.bind = function(face) {
-  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffers[face]);
+HitTestFrameBuffer.prototype.bind = function() {
+  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
   gl.viewport(0, 0, this.size, this.size);
 };
 
-MyFramebuffer.prototype.unbind = function() {
+HitTestFrameBuffer.prototype.unbind = function() {
   gl.bindFramebuffer(gl.FRAMEBUFFER, null);
   gl.viewport(
       0, 0,
@@ -304,15 +300,12 @@ MyFramebuffer.prototype.unbind = function() {
 };
 
 
-var myFBO = new MyFramebuffer(2, true);
-myFBO.unbind()
-
-var myRenderSet;
+var hitTestRenderSet;
 
 ;(function () {
 
   
- myRenderSet = new MyRenderSet(myFBO)
+ hitTestRenderSet = new HitTestRenderSet()
 
   var shader = new Shader(function () {
     return (
@@ -335,7 +328,7 @@ var myRenderSet;
   var mat3 = m4.identity(new Float32Array(16));
   
   
-  myRenderSet.addRenderable({
+  hitTestRenderSet.addRenderable({
     before : function () {
       gl.clearColor(0,0,0,0);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -344,7 +337,7 @@ var myRenderSet;
   })
   
   var lastarr;
-  myRenderSet.addRenderable({
+  hitTestRenderSet.addRenderable({
     before : function () {
       var arr = new Uint8Array(4 * 4)
       gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
@@ -357,7 +350,7 @@ var myRenderSet;
     renderOrder : 999
   })
   
-  myRenderSet.addRenderable({
+  hitTestRenderSet.addRenderable({
     renderOrder: 11,
     render : function (gl) {
       gl.disable(gl.DEPTH_TEST);
@@ -375,7 +368,7 @@ var myRenderSet;
     }
   })
   
-  myRenderSet.addRenderable(quads)
+  hitTestRenderSet.addRenderable(quads)
 
   screen.addRenderable({
     before : function () {
@@ -407,7 +400,7 @@ var myRenderSet;
   shader.varyings.v_pos                   = 'vec4';
   
   var plate = new Plate(shader);
-  plate.textureData = {texture : myFBO.texture}
+  plate.textureData = {texture : hitTestRenderSet.framebuffers.texture}
   plate.add({z: 1})
   
   var uniforms = {};
@@ -441,14 +434,14 @@ screen.beginFrameRendering(false)
 var mousex, mousey;
 
 screen.on('moved', function () {
-  myRenderSet.render(gl, mousex, mousey)
+  hitTestRenderSet.render(gl, mousex, mousey)
 })
 
 function click(x, y) {
-  myRenderSet.render(gl, x - 1, y - 1)
+  hitTestRenderSet.render(gl, x - 1, y - 1)
 }
 function mousemove(x, y) {
-  myRenderSet.render(gl, mousex = x - 1, mousey = y - 1)
+  hitTestRenderSet.render(gl, mousex = x - 1, mousey = y - 1)
 }
 
 document.getElementById('canvas').addEventListener('click', function (e) {

@@ -13,6 +13,7 @@ Screen.prototype.init = function (canvas, fn) {
   this.canvas = canvas;
   var gl = this.gl = twgl.getWebGLContext(canvas, {antialias: false, premultipliedAlpha: false});
   if (!gl) throw "failed to initialize webgl";
+  if (window.WebGLDebugUtils) WebGLDebugUtils.init(gl)
 
   var options = fn && fn(gl)
   this.setOptions(options || {})
