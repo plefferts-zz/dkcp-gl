@@ -1,4 +1,3 @@
-var twgl              = require('../../lib/twgl')
 var m4                = require('../../lib/twgl').m4
 var DkcpGl            = require('../../src/dkcp-gl')
 var picking           = require('../../src/picking')
@@ -6,12 +5,8 @@ var picking           = require('../../src/picking')
 var Renderable        = DkcpGl.Renderable
 var Model             = DkcpGl.Model
 var Plate             = DkcpGl.Plate
-var shaders           = DkcpGl.shaders
 var Shader            = DkcpGl.Shader
 var Allocation        = DkcpGl.Allocation
-
-var RenderSet         = DkcpGl.RenderSet
-var BasicCamera       = DkcpGl.camera.BasicCamera
 
 var main = new DkcpGl({
   canvas : document.getElementById('canvas'),
@@ -104,6 +99,14 @@ var green   = {id: 'green',   color: [0, 1, 0, 1]}
 var blue    = {id: 'blue',    color: [0, 0, 1, 1]}
 var white   = {id: 'white',   color: [1, 1, 1, 1]}
 
+screen.addRenderable({
+  before : function () {
+    gl.clearColor(0,0,0,0);
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+  },
+  renderOrder : 0
+})
+
 var quads  = getRenderable()
 screen.addRenderable(quads)
 quads.add({
@@ -135,33 +138,10 @@ var hitTestRenderSet;
 
 ;(function () {
 
-  
- hitTestRenderSet = hitTestManager.renderSet
-
-  var shader = new Shader(function () {
-    return (
-      '  gl_Position = position; \n'
-    )
-  }, function () {
-    return (
-      '  gl_FragColor = vec4(0.5,0.5,0.5,1.0); \n'
-    )
-    
-  })
-  shader.attributes.position    = 'vec4';
-
-  var plate = new Plate(shader);
-  plate.add({z: -.5})
-  
-  var uniforms = {};
-  var mat1 = m4.identity(new Float32Array(16));
-  var mat2 = m4.identity(new Float32Array(16));
-  var mat3 = m4.identity(new Float32Array(16));
-  
-  
+  hitTestRenderSet = hitTestManager.renderSet
   hitTestRenderSet.addRenderable({
     before : function () {
-      gl.clearColor(0,0,0,0);
+      gl.clearColor(1, 1, 1, 1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
     },
     renderOrder : 0
@@ -181,34 +161,8 @@ var hitTestRenderSet;
     renderOrder : 999
   })
   
-  hitTestRenderSet.addRenderable({
-    renderOrder: 11,
-    render : function (gl) {
-      gl.disable(gl.DEPTH_TEST);
-      
-      gl.enable(gl.BLEND);
-      gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
-      gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
+  hitTestRenderSet.addRenderable(quads);
 
-      var geom = plate.getGeometry(gl);
-      plate.drawPrep(geom, uniforms);
-      geom.draw();
-
-      gl.disable(gl.BLEND);
-      gl.enable(gl.DEPTH_TEST);
-    }
-  })
-  
-  hitTestRenderSet.addRenderable(quads)
-
-  screen.addRenderable({
-    before : function () {
-      gl.clearColor(0,0,0,0);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    },
-    renderOrder : 0
-  })
-  
 }())
   
 ;(function () {
@@ -236,9 +190,6 @@ var hitTestRenderSet;
   
   var uniforms = {};
 
-  var inverse = m4.identity(new Float32Array(16));
-  
-  
   screen.addRenderable({
     renderOrder : 30,
     render : function (gl) {
@@ -246,9 +197,7 @@ var hitTestRenderSet;
       gl.enable(gl.BLEND);
       gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
       gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
-      camera.computeMatrix()
-      // m4.inverse(camera.skymatrix, inverse);
-      uniforms.camera = camera.matrix;
+      uniforms.camera = camera.computeMatrix();
       uniforms.texture = plate.textureData.texture.texture;
       var geom = plate.getGeometry(gl);
       plate.drawPrep(geom, uniforms);
