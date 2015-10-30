@@ -1,2 +1,461 @@
-webpackJsonp([1],{0:function(t,e,r){function n(){a.identity(new Float32Array(16));return new c({renderOrder:10,getUniforms:function(t,e){return t.camera=m.computeMatrix(),t},factory:function(){var t=100,e=new d.Float(t,4),r=new u.HitTestShader(y.hitColorAllocation,function(t){var e=t?"hit_test_zoom_matrix * ":"";return"  gl_Position = "+e+"camera * position; \n  f_color = colors[int(color)];              \n"},function(){return"  gl_FragColor = f_color; \n"});r.attributes.position="vec4",r.attributes.color="float",r.varyings.f_color="vec4",r.vertex_uniforms.camera="mat4",r.vertex_uniforms["colors["+t+"]"]="vec4";var n=new f(this,r,100);return y.mixinModel(n),n.addAttribute("position",4,"Float32Array",function(t,e){return e.vertices[t]}),n.addAttribute("color",1,"Float32Array",function(t,r){return[e.add(r.color,r,function(){return r.color.color})]}),n.uniforms.colors=e.buffer,n}})}function i(t,e){y.renderSet.render(g,m,t-1,e-1)}function o(t,e){y.renderSet.render(g,m,x=t-1,F=e-1)}var a=r(7).m4,s=r(1),u=r(33),c=s.Renderable,f=s.Model,h=s.Plate,l=s.Shader,d=s.Allocation,p=new s({canvas:document.getElementById("canvas"),frameRate:{element:document.getElementById("framerate")},wasd:{document:document,delta:.05,theta:-Math.PI/120}}),m=p.camera,v=p.screen,g=p.screen.gl,y=new u.HitTestManager(g,100),_=function(t,e,r,n){return[[t-n,e-n,r,1],[t-n,e+n,r,1],[t+n,e-n,r,1],[t+n,e+n,r,1]]},E={id:"red",color:[1,0,0,1]},b={id:"green",color:[0,1,0,1]},A={id:"blue",color:[0,0,1,1]},T={id:"white",color:[1,1,1,1]};v.addRenderable({before:function(){g.clearColor(0,0,0,0),g.clear(g.COLOR_BUFFER_BIT|g.DEPTH_BUFFER_BIT)},renderOrder:0});var w=n();v.addRenderable(w),y.renderSet.addRenderable(w),w.add({color:E,hit_area:"red",allocations:{},vertices:_(.25,0,.7,.05)}),w.add({color:b,hit_area:"green",allocations:{},vertices:_(0,.25,.7,.05)}),w.add({color:A,hit_area:"blue",allocations:{},vertices:_(0,0,.9,.05)}),w.add({color:T,hit_area:"white",allocations:{},vertices:_(0,0,.7,.01)}),function(){var t=new l(function(){return"  v_pos       = position; \n  gl_Position = camera * vec4(position.x / 4.0, position.y / 4.0, 1.5, 1.0); \n"},function(){return"  gl_FragColor = texture2D(                            \n      texture,                                         \n      vec2(v_pos.x / 2.0 + 0.5, v_pos.y / 2.0 + 0.5)); \n"});t.attributes.position="vec4",t.fragment_uniforms.texture="sampler2D",t.vertex_uniforms.camera="mat4",t.varyings.v_pos="vec4";var e=y.renderSet.framebuffers.texture,r=new h(t);r.textureData={texture:e},r.add({z:1});var n={};v.addRenderable({renderOrder:30,render:function(t){t.disable(t.DEPTH_TEST),t.enable(t.BLEND),t.blendEquationSeparate(t.FUNC_ADD,t.FUNC_ADD),t.blendFuncSeparate(t.ONE_MINUS_DST_ALPHA,t.DST_ALPHA,t.ONE,t.ONE),n.camera=m.computeMatrix(),n.texture=e.texture;var i=r.getGeometry(t);r.drawPrep(i,n),i.draw(),t.disable(t.BLEND),t.enable(t.DEPTH_TEST)}})}(),v.beginFrameRendering(!1);var x,F;v.on("moved",function(){y.renderSet.render(g,m,x,F)}),document.getElementById("canvas").addEventListener("click",function(t){var e=document.getElementById("canvas").getBoundingClientRect();i((t.clientX-e.left)/e.width*m.frameWidth,(t.clientY-e.top)/e.height*m.frameHeight)}),document.getElementById("canvas").addEventListener("mousemove",function(t){var e=document.getElementById("canvas").getBoundingClientRect();o((t.clientX-e.left)/e.width*m.frameWidth,(t.clientY-e.top)/e.height*m.frameHeight)})},32:function(t,e){"function"==typeof Object.create?t.exports=function(t,e){t.super_=e,t.prototype=Object.create(e.prototype,{constructor:{value:t,enumerable:!1,writable:!0,configurable:!0}})}:t.exports=function(t,e){t.super_=e;var r=function(){};r.prototype=e.prototype,t.prototype=new r,t.prototype.constructor=t}},33:function(t,e,r){function n(t,e){this.hitTestManager=e,this.framebuffers=new i(t,2,!0),this.framebuffers.unbind(),c.call(this),this.addRenderable({before:function(){t.clearColor(1,1,1,1),t.clear(t.COLOR_BUFFER_BIT|t.DEPTH_BUFFER_BIT)},renderOrder:0})}function i(t,e,r){this.gl=t,this.size=e,this.depth=r;var n={texture:f.createTexture(t,{target:t.TEXTURE_2D,width:this.size,height:this.size,min:t.LINEAR,mag:t.LINEAR,format:t.RGBA,type:t.UNSIGNED_BYTE,wrapS:t.CLAMP_TO_EDGE,wrapT:t.CLAMP_TO_EDGE})};if(this.depth){var i=t.createRenderbuffer();t.bindRenderbuffer(t.RENDERBUFFER,i),t.renderbufferStorage(t.RENDERBUFFER,t.DEPTH_COMPONENT16,this.size,this.size)}var o=t.createFramebuffer();t.bindFramebuffer(t.FRAMEBUFFER,o),t.framebufferTexture2D(t.FRAMEBUFFER,t.COLOR_ATTACHMENT0,t.TEXTURE_2D,n.texture,0),this.depth&&t.framebufferRenderbuffer(t.FRAMEBUFFER,t.DEPTH_ATTACHMENT,t.RENDERBUFFER,i);var a=t.checkFramebufferStatus(t.FRAMEBUFFER);if(a!=t.FRAMEBUFFER_COMPLETE)throw"gl.checkFramebufferStatus() returned "+WebGLDebugUtils.glEnumToString(a);this.framebuffer=o,t.bindRenderbuffer(t.RENDERBUFFER,null),this.texture=n}var o=r(32),a=r(1),s=a.Allocation,u=a.Shader,c=a.RenderSet,f=r(7),h=f.m4,l=function(t){s.Float.call(this,t,4)};o(l,s.Float),l.prototype.add=function(t,e){return s.Float.prototype.add.call(this,t,e,function(t){var e=(t>>>0)%256,r=(t>>>8)%256,n=(t>>>16)%256;return[n/255,r/255,e/255,1]})},l.prototype.hitAreaFor=function(t){var e=65536*t[0]+256*t[1]+t[2];return this.members[e]};var d=function(t,e){this.attribute_name="hit_color",this.uniform_name="hit_colors",this.hitColorAllocation=new l(e),this.renderSet=new n(t,this)};d.prototype.hitAreaFor=function(t){return this.hitColorAllocation.hitAreaFor(t)},d.prototype.mixinModel=function(t){var e=this.hitColorAllocation;t.addAttribute(this.attribute_name,1,"Float32Array",function(t,r){return[e.add({id:r.hit_area},r)]}),t.uniforms[this.uniform_name]=this.hitColorAllocation.buffer};var p=function(t,e,r){u.call(this,this.wrapVertexSource(e),this.wrapFragmentSource(r)),this.hitColorAllocation=t,this.varyings.f_hit_color="vec4",this.attributes.hit_color="float",this.vertex_uniforms.hit_test_zoom_matrix="mat4",this.vertex_uniforms["hit_colors["+this.hitColorAllocation.slots.max+"]"]="vec4"};o(p,u),p.prototype.wrapVertexSource=function(t){return function(){return t(this.hit_test)+"\n  f_hit_color = hit_colors[int(hit_color)];"}},p.prototype.wrapFragmentSource=function(t){return function(){return this.hit_test?" gl_FragColor = f_hit_color;  \n":t()}},p.prototype.getProgram=function(t,e){return e.hit_test_zoom_matrix?this.hit_test_program?this.hit_test_program:(this.hit_test=!0,this.hit_test_program=f.createProgramInfo(t,[this.getVertexSource(),this.getFragmentSource()])):(this.hit_test=!1,u.prototype.getProgram.call(this,t,e))},o(n,c),n.prototype.getUniforms=function(){return{hit_test_zoom_matrix:this.hit_test_zoom_matrix}},n.prototype.render=function(t,e,r,n){this.framebuffers.bind();var i=Math.max(e.frameWidth,e.frameHeight),o=new Float32Array(16);h.translate(h.scaling([i,i,1]),[2*(.5-r/e.frameWidth),-2*(.5-n/e.frameHeight),0],o),this.hit_test_zoom_matrix=o,c.prototype.render.call(this,t);var a=new Uint8Array(16);t.readPixels(0,0,2,2,t.RGBA,t.UNSIGNED_BYTE,a),a=Array.prototype.slice.call(a,0,3),a.join(",")!=this.lastarr&&console.log(this.hitTestManager.hitAreaFor(a)),this.lastarr=a.join(","),this.framebuffers.unbind()},i.prototype.bind=function(){var t=this.gl;t.bindFramebuffer(t.FRAMEBUFFER,this.framebuffer),t.viewport(0,0,this.size,this.size)},i.prototype.unbind=function(){var t=this.gl;t.bindFramebuffer(t.FRAMEBUFFER,null),t.viewport(0,0,t.drawingBufferWidth||t.canvas.width,t.drawingBufferHeight||t.canvas.height)},t.exports.HitTestShader=p,t.exports.HitTestManager=d}});
-//# sourceMappingURL=bundle.js.map
+webpackJsonp([1],{
+
+/***/ 0:
+/***/ function(module, exports, __webpack_require__) {
+
+	var m4                = __webpack_require__(7).m4
+	var DkcpGl            = __webpack_require__(1)
+	var picking           = __webpack_require__(33)
+
+	var Renderable        = DkcpGl.Renderable
+	var Model             = DkcpGl.Model
+	var Plate             = DkcpGl.Plate
+	var Shader            = DkcpGl.Shader
+	var Allocation        = DkcpGl.Allocation
+	var MouseTrack        = DkcpGl.MouseTrack
+
+	var main = new DkcpGl({
+	  canvas : document.getElementById('canvas'),
+	  frameRate : {
+	    element : document.getElementById('framerate')
+	  },
+	  wasd : {
+	    document : document,
+	    delta : .05,
+	    theta : -Math.PI / 120
+	  }
+	})
+	var camera = main.camera;
+	var screen = main.screen;
+	var gl     = main.screen.gl;
+
+	var hitTestManager = new picking.HitTestManager(gl, 100);
+
+	function getRenderable() {
+	  return new Renderable({
+	    renderOrder : 10,
+	    getUniforms : function (uniforms, renderSet) {
+	      uniforms.camera = camera.computeMatrix()
+	      return uniforms
+	    },
+	    factory : function () {
+	      
+	      var maxColors = 100
+	      var colorAllocation    = new Allocation.Float(maxColors, 4)
+	      
+	      var shader = new picking.HitTestShader(hitTestManager.hitColorAllocation, function (hit_test) {
+	        var hit_test_zoom_matrix = hit_test ? 'hit_test_zoom_matrix * ' : '';
+
+	        return '  gl_Position = ' + hit_test_zoom_matrix + 'camera * position; \n' + 
+	               '  f_color = colors[int(color)];              \n'
+	      }, function () {
+	        return '  gl_FragColor = f_color; \n'
+	      })
+
+	      shader.attributes.position     = 'vec4';
+	      shader.attributes.color        = 'float';
+	      shader.varyings.f_color        = 'vec4';
+	      shader.vertex_uniforms.camera  = 'mat4';
+	      shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
+
+	      var m = new Model(this, shader, 100)
+
+	      hitTestManager.mixinModel(m)
+	      
+	      m.addAttribute('position', 4, 'Float32Array', function (i, item) {
+	        return item.vertices[i]
+	      });
+	      
+	      m.addAttribute('color', 1, 'Float32Array', function (i, item) {
+	        return [
+	          colorAllocation.add(item.color, item, function () {
+	            return item.color.color
+	          })
+	        ]
+	      });
+
+	      m.uniforms.colors = colorAllocation.buffer;
+	  
+	      return m
+	    }
+	  })
+	}
+
+	var square = function (x, y, z, w) {
+	  return [
+	    [x - w,  y - w, z, 1],
+	    [x - w,  y + w, z, 1],
+	    [x + w,  y - w, z, 1],
+	    [x + w,  y + w, z, 1]
+	  ]
+	}
+
+	var red     = {id: 'red',     color: [1, 0, 0, 1]}
+	var green   = {id: 'green',   color: [0, 1, 0, 1]}
+	var blue    = {id: 'blue',    color: [0, 0, 1, 1]}
+	var white   = {id: 'white',   color: [1, 1, 1, 1]}
+
+	screen.addRenderable({
+	  before : function () {
+	    gl.clearColor(0,0,0,0);
+	    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	  },
+	  renderOrder : 0
+	})
+
+	var quads  = getRenderable()
+	screen.addRenderable(quads)
+	hitTestManager.renderSet.addRenderable(quads);
+
+	quads.add({
+	  color : red,
+	  hit_area : 'red',
+	  allocations : {},
+	  vertices : square(.25, 0, .7, .05)
+	})
+	quads.add({
+	  color : green,
+	  hit_area : 'green',
+	  allocations : {},
+	  vertices : square(0, .25, .7, .05)
+	})
+	quads.add({
+	  color : blue,
+	  hit_area : 'blue',
+	  allocations : {},
+	  vertices : square(0, 0, .9, .05)
+	})
+	quads.add({
+	  color : white,
+	  hit_area : 'white',
+	  allocations : {},
+	  vertices : square(0, 0, .7, .01)
+	})
+
+
+	  
+	;(function () {
+	  
+	  var shader = new Shader(function () {
+	    return (
+	      '  v_pos       = position; \n' +
+	      '  gl_Position = camera * vec4(position.x / 4.0, position.y / 4.0, 1.5, 1.0); \n'
+	    ) 
+	  }, function () {
+	    return (
+	      '  gl_FragColor = texture2D(                            \n'+
+	      '      texture,                                         \n'+
+	      '      vec2(v_pos.x / 2.0 + 0.5, v_pos.y / 2.0 + 0.5)); \n'
+	    )
+	  })
+	  shader.attributes.position              = 'vec4';
+	  shader.fragment_uniforms.texture        = 'sampler2D';
+	  shader.vertex_uniforms.camera           = 'mat4';
+	  shader.varyings.v_pos                   = 'vec4';
+	  
+	  var texture = hitTestManager.renderSet.framebuffers.texture
+	  var plate = new Plate(shader);
+	  plate.textureData = {texture : texture}
+	  plate.add({z: 1})
+	  
+	  var uniforms = {};
+
+	  screen.addRenderable({
+	    renderOrder : 30,
+	    render : function (gl) {
+	      gl.disable(gl.DEPTH_TEST);
+	      gl.enable(gl.BLEND);
+	      gl.blendEquationSeparate( gl.FUNC_ADD, gl.FUNC_ADD );
+	      gl.blendFuncSeparate(gl.ONE_MINUS_DST_ALPHA, gl.DST_ALPHA, gl.ONE, gl.ONE);
+	      uniforms.camera = camera.computeMatrix();
+	      uniforms.texture = texture.texture;
+	      var geom = plate.getGeometry(gl);
+	      plate.drawPrep(geom, uniforms);
+	      geom.draw();
+	      gl.disable(gl.BLEND);
+	      gl.enable(gl.DEPTH_TEST);
+	    }
+	  })
+
+	}());
+
+	screen.beginFrameRendering(false)
+
+	var mouseTrack = new MouseTrack()
+	mouseTrack.bindMouseEvents(main.screen.canvas, function (x, y) {
+	  return hitTestManager.test(gl, camera, x, y)
+	})
+
+	screen.on('moved', function () {
+	  mouseTrack.track() // update mouseover/mouseout when the camera changes
+	})
+
+	mouseTrack.on('mouseover', function (e) {
+	  console.log('mouseover', e)
+	})
+
+	mouseTrack.on('mouseout', function (e) {
+	  console.log('mouseout', e)
+	})
+
+	mouseTrack.on('mousedown', function (e) {
+	  console.log('mousedown', e)
+	})
+
+	mouseTrack.on('mouseup', function (e) {
+	  console.log('mouseup', e)
+	})
+
+	mouseTrack.on('mousemove', function (e) {
+	  // console.log('mousemove', e)
+	})
+
+	mouseTrack.on('click', function (e) {
+	  console.log('click', e)
+	})
+
+
+/***/ },
+
+/***/ 33:
+/***/ function(module, exports, __webpack_require__) {
+
+	var inherits   = __webpack_require__(34)
+	var DkcpGl     = __webpack_require__(1)
+	var Allocation = DkcpGl.Allocation
+	var Shader     = DkcpGl.Shader
+	var RenderSet  = DkcpGl.RenderSet
+	var twgl       = __webpack_require__(7)
+	var m4         = twgl.m4
+
+	var HitColorAllocation = function (max) {
+	  Allocation.Float.call(this, max, 4)
+	}
+	inherits(HitColorAllocation, Allocation.Float)
+
+	HitColorAllocation.prototype.add = function (item, owner) {
+	  return Allocation.Float.prototype.add.call(this, item, owner, function (index) {
+	    var b = (index >>>  0) % 0x100;
+	    var g = (index >>>  8) % 0x100;
+	    var r = (index >>> 16) % 0x100;
+	    return [r / 255, g / 255, b / 255, 1]
+	  })
+	}
+
+	HitColorAllocation.prototype.hitAreaFor = function (arr) {
+	  var c = arr[0] * 0x10000 + arr[1] * 0x100 + arr[2];
+	  return this.members[c]
+	}
+
+	var HitTestManager = function (gl, max) {
+	  this.attribute_name     = 'hit_color';
+	  this.uniform_name       = 'hit_colors';
+	  this.hitColorAllocation = new HitColorAllocation(max);
+	  this.renderSet          = new HitTestRenderSet(gl, this);
+	}
+
+	HitTestManager.prototype.test = function (gl, camera, mousex, mousey) {
+	  var arr = this.renderSet.render(gl, camera, mousex, mousey)
+	  return this.hitColorAllocation.hitAreaFor(arr)
+	}
+
+	HitTestManager.prototype.mixinModel = function (model) {
+	  var allocation = this.hitColorAllocation
+	  model.addAttribute(this.attribute_name, 1, 'Float32Array', function (i, item) {
+	    return [
+	      allocation.add({id: item.hit_area}, item)
+	    ]
+	  });
+	  model.uniforms[this.uniform_name] = this.hitColorAllocation.buffer;
+	}
+
+	var HitTestShader = function (hitColorAllocation, getVertexBodySource, getFragmentBodySource) {
+	  Shader.call(this,
+	      this.wrapVertexSource(getVertexBodySource),
+	      this.wrapFragmentSource(getFragmentBodySource))
+
+	  this.hitColorAllocation = hitColorAllocation
+	  this.varyings.f_hit_color  = 'vec4';
+	  this.attributes.hit_color  = 'float';
+	  this.vertex_uniforms.hit_test_zoom_matrix = 'mat4';
+	  this.vertex_uniforms['hit_colors[' + this.hitColorAllocation.slots.max + ']'] = 'vec4';
+	}
+	inherits(HitTestShader, Shader)
+
+	HitTestShader.prototype.wrapVertexSource = function (fn) {
+	  return function () {
+	    return fn(this.hit_test) + '\n  f_hit_color = hit_colors[int(hit_color)];'
+	  }
+	};
+
+	HitTestShader.prototype.wrapFragmentSource = function (fn) {
+	  return function () {
+	    if (this.hit_test) {
+	      return ' gl_FragColor = f_hit_color;  \n'
+	    }
+	    return fn();
+	  }
+	};
+
+	HitTestShader.prototype.getProgram = function (gl, uniforms) {
+	  if (uniforms.hit_test_zoom_matrix) {
+	    if (this.hit_test_program)
+	      return this.hit_test_program
+	    
+	    this.hit_test = true
+	    return this.hit_test_program = twgl.createProgramInfo(
+	      gl,
+	      [this.getVertexSource(), this.getFragmentSource()]
+	    )
+	  }
+	  
+	  this.hit_test = false
+	  return Shader.prototype.getProgram.call(this, gl, uniforms)
+	};
+
+
+	function HitTestRenderSet(gl, hitTestManager) {
+	  this.hitTestManager = hitTestManager;
+	  this.framebuffers = new HitTestFrameBuffer(gl, 2, true);
+	  this.framebuffers.unbind()
+	  
+	  RenderSet.call(this)
+
+	  this.addRenderable({
+	    before : function () {
+	      gl.clearColor(1, 1, 1, 1);
+	      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	    },
+	    renderOrder : 0
+	  })
+	  
+	}
+	inherits(HitTestRenderSet, RenderSet)
+
+	HitTestRenderSet.prototype.getUniforms = function () {
+	  return {
+	    hit_test_zoom_matrix : this.hit_test_zoom_matrix
+	  }
+	}
+	HitTestRenderSet.prototype.render = function (gl, camera, x, y) {
+	  this.framebuffers.bind();
+	  var zoom = Math.max(camera.frameWidth, camera.frameHeight);
+	  var dst = new Float32Array(16)
+	  m4.translate(m4.scaling([zoom, zoom, 1]), [
+	    2 * (.5 - x / camera.frameWidth),
+	    -2 * (.5 - y / camera.frameHeight),
+	    0
+	  ], dst)
+
+	  this.hit_test_zoom_matrix = dst
+
+	  RenderSet.prototype.render.call(this, gl);
+	  
+	  var arr = new Uint8Array(4 * 4)
+	  gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
+	  arr = Array.prototype.slice.call(arr, 0, 3)
+	  this.framebuffers.unbind();
+	  return arr
+	}
+
+
+	function HitTestFrameBuffer(gl, size, opt_depth) {
+	  this.gl = gl
+	  this.size = size;
+	  this.depth = opt_depth;
+	  var tex = {
+	    texture : twgl.createTexture(gl, {
+	      target : gl.TEXTURE_2D,
+	      width  : this.size,
+	      height : this.size,
+	      min    : gl.LINEAR,
+	      mag    : gl.LINEAR,
+	      format : gl.RGBA,
+	      type   : gl.UNSIGNED_BYTE,
+	      wrapS  : gl.CLAMP_TO_EDGE,
+	      wrapT  : gl.CLAMP_TO_EDGE
+	    })
+	  }
+	  if (this.depth) {
+	    var db = gl.createRenderbuffer();
+	    gl.bindRenderbuffer(gl.RENDERBUFFER, db);
+	    gl.renderbufferStorage(
+	        gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, this.size, this.size);
+	  }
+
+	  var fb = gl.createFramebuffer();
+	  gl.bindFramebuffer(gl.FRAMEBUFFER, fb);
+	  gl.framebufferTexture2D(
+	      gl.FRAMEBUFFER,
+	      gl.COLOR_ATTACHMENT0,
+	      gl.TEXTURE_2D,
+	      tex.texture,
+	      0);
+	  if (this.depth) {
+	    gl.framebufferRenderbuffer(
+	        gl.FRAMEBUFFER,
+	        gl.DEPTH_ATTACHMENT,
+	        gl.RENDERBUFFER,
+	        db);
+	  }
+	  var status = gl.checkFramebufferStatus(gl.FRAMEBUFFER);
+	  if (status != gl.FRAMEBUFFER_COMPLETE) {
+	    throw("gl.checkFramebufferStatus() returned " + WebGLDebugUtils.glEnumToString(status));
+	  }
+	  this.framebuffer = fb;
+	  gl.bindRenderbuffer(gl.RENDERBUFFER, null);
+	  this.texture = tex;
+	}
+
+	HitTestFrameBuffer.prototype.bind = function() {
+	  var gl = this.gl
+	  gl.bindFramebuffer(gl.FRAMEBUFFER, this.framebuffer);
+	  gl.viewport(0, 0, this.size, this.size);
+	};
+
+	HitTestFrameBuffer.prototype.unbind = function() {
+	  var gl = this.gl
+	  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+	  gl.viewport(
+	      0, 0,
+	      gl.drawingBufferWidth || gl.canvas.width,
+	      gl.drawingBufferHeight || gl.canvas.height);
+	};
+
+	module.exports.HitTestShader  = HitTestShader
+	module.exports.HitTestManager = HitTestManager
+
+
+/***/ },
+
+/***/ 34:
+/***/ function(module, exports) {
+
+	if (typeof Object.create === 'function') {
+	  // implementation from standard node.js 'util' module
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    ctor.prototype = Object.create(superCtor.prototype, {
+	      constructor: {
+	        value: ctor,
+	        enumerable: false,
+	        writable: true,
+	        configurable: true
+	      }
+	    });
+	  };
+	} else {
+	  // old school shim for old browsers
+	  module.exports = function inherits(ctor, superCtor) {
+	    ctor.super_ = superCtor
+	    var TempCtor = function () {}
+	    TempCtor.prototype = superCtor.prototype
+	    ctor.prototype = new TempCtor()
+	    ctor.prototype.constructor = ctor
+	  }
+	}
+
+
+/***/ }
+
+});

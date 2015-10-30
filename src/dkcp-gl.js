@@ -1,7 +1,8 @@
 var Screen           = require('./screen'),
     FrameRate        = require('./framerate'),
     camera           = require('./camera'),
-    WasdKeyBinding   = require('./wasd_key_binding')
+    WasdKeyBinding   = require('./wasd_key_binding'),
+    MouseTrack       = require('./mouse_track')
 
 
 function DkcpGl(options) {
@@ -51,6 +52,7 @@ DkcpGl.Screen            = Screen
 DkcpGl.FrameRate         = FrameRate
 DkcpGl.camera            = camera
 DkcpGl.WasdKeyBinding    = WasdKeyBinding
+DkcpGl.MouseTrack        = MouseTrack
 
 DkcpGl.Allocation        = require('./allocation')
 DkcpGl.Attribute         = require('./attribute')

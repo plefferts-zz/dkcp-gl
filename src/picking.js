@@ -32,7 +32,8 @@ var HitTestManager = function (gl, max) {
   this.renderSet          = new HitTestRenderSet(gl, this);
 }
 
-HitTestManager.prototype.hitAreaFor = function (arr) {
+HitTestManager.prototype.test = function (gl, camera, mousex, mousey) {
+  var arr = this.renderSet.render(gl, camera, mousex, mousey)
   return this.hitColorAllocation.hitAreaFor(arr)
 }
 
@@ -114,13 +115,13 @@ HitTestRenderSet.prototype.getUniforms = function () {
     hit_test_zoom_matrix : this.hit_test_zoom_matrix
   }
 }
-HitTestRenderSet.prototype.render = function (gl, camera, clickx, clicky) {
+HitTestRenderSet.prototype.render = function (gl, camera, x, y) {
   this.framebuffers.bind();
   var zoom = Math.max(camera.frameWidth, camera.frameHeight);
   var dst = new Float32Array(16)
   m4.translate(m4.scaling([zoom, zoom, 1]), [
-    2 * (.5 - clickx / camera.frameWidth),
-    -2 * (.5 - clicky / camera.frameHeight),
+    2 * (.5 - x / camera.frameWidth),
+    -2 * (.5 - y / camera.frameHeight),
     0
   ], dst)
 
@@ -131,12 +132,8 @@ HitTestRenderSet.prototype.render = function (gl, camera, clickx, clicky) {
   var arr = new Uint8Array(4 * 4)
   gl.readPixels(0, 0, 2, 2, gl.RGBA, gl.UNSIGNED_BYTE, arr)
   arr = Array.prototype.slice.call(arr, 0, 3)
-  if (arr.join(',') != this.lastarr) {
-    console.log(this.hitTestManager.hitAreaFor(arr))
-  }
-  this.lastarr = arr.join(',')
-  
   this.framebuffers.unbind();
+  return arr
 }
 
 

@@ -7,6 +7,7 @@ var Model             = DkcpGl.Model
 var Plate             = DkcpGl.Plate
 var Shader            = DkcpGl.Shader
 var Allocation        = DkcpGl.Allocation
+var MouseTrack        = DkcpGl.MouseTrack
 
 var main = new DkcpGl({
   canvas : document.getElementById('canvas'),
@@ -26,7 +27,6 @@ var gl     = main.screen.gl;
 var hitTestManager = new picking.HitTestManager(gl, 100);
 
 function getRenderable() {
-  var identity = m4.identity(new Float32Array(16));
   return new Renderable({
     renderOrder : 10,
     getUniforms : function (uniforms, renderSet) {
@@ -176,25 +176,35 @@ quads.add({
 
 screen.beginFrameRendering(false)
 
-var mousex, mousey;
+var mouseTrack = new MouseTrack()
+mouseTrack.bindMouseEvents(main.screen.canvas, function (x, y) {
+  return hitTestManager.test(gl, camera, x, y)
+})
 
 screen.on('moved', function () {
-  hitTestManager.renderSet.render(gl, camera, mousex, mousey)
+  mouseTrack.track() // update mouseover/mouseout when the camera changes
 })
 
-function click(x, y) {
-  hitTestManager.renderSet.render(gl, camera, x - 1, y - 1)
-}
-function mousemove(x, y) {
-  hitTestManager.renderSet.render(gl, camera, mousex = x - 1, mousey = y - 1)
-}
-
-document.getElementById('canvas').addEventListener('click', function (e) {
-  var rect = document.getElementById('canvas').getBoundingClientRect()
-  click((e.clientX - rect.left) / rect.width * camera.frameWidth, (e.clientY - rect.top) / rect.height * camera.frameHeight)
+mouseTrack.on('mouseover', function (e) {
+  console.log('mouseover', e)
 })
 
-document.getElementById('canvas').addEventListener('mousemove', function (e) {
-  var rect = document.getElementById('canvas').getBoundingClientRect()
-  mousemove((e.clientX - rect.left) / rect.width * camera.frameWidth, (e.clientY - rect.top) / rect.height * camera.frameHeight)
+mouseTrack.on('mouseout', function (e) {
+  console.log('mouseout', e)
+})
+
+mouseTrack.on('mousedown', function (e) {
+  console.log('mousedown', e)
+})
+
+mouseTrack.on('mouseup', function (e) {
+  console.log('mouseup', e)
+})
+
+mouseTrack.on('mousemove', function (e) {
+  // console.log('mousemove', e)
+})
+
+mouseTrack.on('click', function (e) {
+  console.log('click', e)
 })
