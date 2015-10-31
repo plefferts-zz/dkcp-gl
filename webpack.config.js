@@ -9,8 +9,14 @@ var uglifyPlugin =
   
 module.exports = {
     entry: {
-      picking : "./examples/picking/index.js",
-      basic : "./examples/basic/index.js",
+      addremove : './examples/addremove/index.js',
+      basic : './examples/basic/index.js',
+      environment : './examples/environment/index.js',
+      geodesic : './examples/geodesic/index.js',
+      noise : './examples/noise/index.js',
+      picking : './examples/picking/index.js',
+      sprite : './examples/sprite/index.js',
+      transforms : './examples/transforms/index.js'
     },
     output: {
         path: __dirname + '/examples/',
@@ -22,5 +28,8 @@ module.exports = {
         ]
     },
     devtool : "source-maps",
-    plugins: [commonsPlugin, uglifyPlugin]
+    plugins: [
+      commonsPlugin,
+      uglifyPlugin
+    ]
 };

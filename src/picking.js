@@ -98,14 +98,6 @@ function HitTestRenderSet(gl, hitTestManager) {
   this.framebuffers.unbind()
   
   RenderSet.call(this)
-
-  this.addRenderable({
-    before : function () {
-      gl.clearColor(1, 1, 1, 1);
-      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-    },
-    renderOrder : 0
-  })
   
 }
 inherits(HitTestRenderSet, RenderSet)
@@ -126,6 +118,9 @@ HitTestRenderSet.prototype.render = function (gl, camera, x, y) {
   ], dst)
 
   this.hit_test_zoom_matrix = dst
+
+  gl.clearColor(1, 1, 1, 1);
+  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
   RenderSet.prototype.render.call(this, gl);
   

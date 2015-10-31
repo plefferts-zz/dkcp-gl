@@ -1,11 +1,11 @@
-webpackJsonp([1],{
+webpackJsonp([5],{
 
 /***/ 0:
 /***/ function(module, exports, __webpack_require__) {
 
 	var m4                = __webpack_require__(7).m4
 	var DkcpGl            = __webpack_require__(1)
-	var picking           = __webpack_require__(33)
+	var picking           = __webpack_require__(34)
 
 	var Renderable        = DkcpGl.Renderable
 	var Model             = DkcpGl.Model
@@ -217,10 +217,10 @@ webpackJsonp([1],{
 
 /***/ },
 
-/***/ 33:
+/***/ 34:
 /***/ function(module, exports, __webpack_require__) {
 
-	var inherits   = __webpack_require__(34)
+	var inherits   = __webpack_require__(35)
 	var DkcpGl     = __webpack_require__(1)
 	var Allocation = DkcpGl.Allocation
 	var Shader     = DkcpGl.Shader
@@ -320,14 +320,6 @@ webpackJsonp([1],{
 	  this.framebuffers.unbind()
 	  
 	  RenderSet.call(this)
-
-	  this.addRenderable({
-	    before : function () {
-	      gl.clearColor(1, 1, 1, 1);
-	      gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	    },
-	    renderOrder : 0
-	  })
 	  
 	}
 	inherits(HitTestRenderSet, RenderSet)
@@ -348,6 +340,9 @@ webpackJsonp([1],{
 	  ], dst)
 
 	  this.hit_test_zoom_matrix = dst
+
+	  gl.clearColor(1, 1, 1, 1);
+	  gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	  RenderSet.prototype.render.call(this, gl);
 	  
@@ -428,7 +423,7 @@ webpackJsonp([1],{
 
 /***/ },
 
-/***/ 34:
+/***/ 35:
 /***/ function(module, exports) {
 
 	if (typeof Object.create === 'function') {
