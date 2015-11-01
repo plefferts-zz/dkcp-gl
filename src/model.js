@@ -178,14 +178,15 @@ Model.Triangles.prototype.indicesAttribute = function () {
   return new IndicesAttribute.Triangles(this.slots.max)
 }
 
-Model.Geodesics = function Geodesics(accommodator, shader, max, subdivisions) {
+Model.Geodesics = function Geodesics(accommodator, shader, max, subdivisions, individual_faces) {
   this.trisPerPoly = 20 * subdivisions * subdivisions
+  this.individual_faces = individual_faces
   Model.call(this, accommodator, shader, max)
 }
 util.inherits(Model.Geodesics, Model)
 
 Model.Geodesics.prototype.indicesAttribute = function () {
-  return new IndicesAttribute.Geodesics(this.slots.max, this.trisPerPoly)
+  return new IndicesAttribute.Geodesics(this.slots.max, this.trisPerPoly, this.individual_faces)
 }
 
 module.exports = Model

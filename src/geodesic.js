@@ -117,7 +117,7 @@ Hedron.prototype.tri = function (l0, l1, l2) {
   return new Tri(this._nextTri ++, l0, l1, l2)
 }
 
-Hedron.prototype.getGeometry = function () {
+Hedron.prototype.getGeometry = function (individual_faces) {
   var tris        = []
   var points      = []
   var points_done = {}
@@ -127,11 +127,16 @@ Hedron.prototype.getGeometry = function () {
     var geom_points = []
     for (var j in tri_points) {
       var point = tri_points[j]
-      if (!(point.id in points_done)) {
+      if (individual_faces) {
         points.push(point.getCoords())
-        points_done[point.id] = points.length - 1
+        geom_points.push(points.length - 1)
+      } else {
+        if (!(point.id in points_done)) {
+          points.push(point.getCoords())
+          points_done[point.id] = points.length - 1
+        }
+        geom_points.push(points_done[point.id])
       }
-      geom_points.push(points_done[point.id])
     }
     tris.push(geom_points)
   }

@@ -14,16 +14,14 @@ var main = new DkcpGl({
   },
   wasd : {
     document : document,
-    delta : .5,
-    theta : -Math.PI / 30
+    delta : .25,
+    theta : -Math.PI / 60
   }
 })
 var camera = main.camera;
 var screen = main.screen;
 
-var subdivisions = 11;
-
-function getRenderable() {
+function getRenderable(subdivisions, individual_faces) {
   return new Renderable({
     before : function () {
     },
@@ -34,7 +32,7 @@ function getRenderable() {
     },
     factory : function () {
       
-      var maxColors = 10
+      var maxColors = 300
       var colorAllocation = new Allocation.Float(maxColors, 4)
       
       var shader = new Shader(function () {
@@ -49,7 +47,7 @@ function getRenderable() {
       shader.vertex_uniforms.camera = 'mat4';
       shader.vertex_uniforms['colors[' + maxColors + ']'] = 'vec4';
 
-      var m = new Model.Geodesics(this, shader, 2, subdivisions)
+      var m = new Model.Geodesics(this, shader, 2, subdivisions, individual_faces)
       m.addAttribute('position', 4, 'Float32Array', function (i, item) {
         return item.vertices[i]
       });
@@ -79,14 +77,19 @@ var white   = {id: 'white',   color: [1, 1, 1, 1]}
 
 var colors  = [red, yellow, green, cyan, blue, magenta, white];
 
-  
-var geos  = getRenderable()
+
+var subs = 11
+var faces = false
+var geos  = getRenderable(subs, faces)
 screen.addRenderable(geos)
 
-var g = geodesic(subdivisions).getGeometry();
+var g = geodesic(subs).getGeometry(faces);
 var color_ints = [];
-for (var i = 0; i < g.points.length; i ++) {
-  color_ints.push(colors[Math.random() * colors.length | 0])
+for (var i = 0; i < g.tris.length; i ++) {
+  var c = colors[Math.random() * colors.length | 0]
+  for (var j = 0; j < (faces ? 3 : 1); j ++) {
+    color_ints.push(c)
+  }
 }
 var vertices = []
 g.points.forEach(function (point) {
@@ -104,10 +107,17 @@ geos.add({
   vertices    : vertices
 })
 
-var g = geodesic(subdivisions).getGeometry();
+var subs2 = 4
+var faces2 = true
+var geos2  = getRenderable(subs2, faces2)
+screen.addRenderable(geos2)
+var g = geodesic(subs2).getGeometry(faces2);
 var color_ints = [];
-for (var i = 0; i < g.points.length; i ++) {
-  color_ints.push(colors[Math.random() * colors.length | 0])
+for (var i = 0; i < g.tris.length; i ++) {
+  var c = colors[Math.random() * colors.length | 0]
+  for (var j = 0; j < (faces2 ? 3 : 1); j ++) {
+    color_ints.push(c)
+  }
 }
 var vertices = []
 g.points.forEach(function (point) {
@@ -118,7 +128,7 @@ g.points.forEach(function (point) {
     1
   ])
 })
-geos.add({
+geos2.add({
   color       : color_ints,
   allocations : {},
   tris        : g.tris,

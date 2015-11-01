@@ -47,8 +47,12 @@ IndicesAttribute.Triangles.prototype.indexCoords = function (c) {
 
 module.exports = IndicesAttribute
 
-IndicesAttribute.Geodesics = function GeodesicIndices(max, trisPerPoly) {
-  IndicesAttribute.call(this, 'indices', max, trisPerPoly / 2 + 2, trisPerPoly)
+IndicesAttribute.Geodesics = function GeodesicIndices(max, trisPerPoly, individual_faces) {
+  if (individual_faces) {
+    IndicesAttribute.call(this, 'indices', max, trisPerPoly * 3, trisPerPoly)
+  } else {
+    IndicesAttribute.call(this, 'indices', max, trisPerPoly / 2 + 2, trisPerPoly)
+  }
 }
 util.inherits(IndicesAttribute.Geodesics, IndicesAttribute)
 
