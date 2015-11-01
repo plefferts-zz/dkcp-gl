@@ -94,9 +94,9 @@ for (var i = 0; i < g.tris.length; i ++) {
 var vertices = []
 g.points.forEach(function (point) {
   vertices.push([
-    point[0],
-    point[1],
-    point[2] + 5,
+    point[0] * 2,
+    point[1] * 2,
+    point[2] * 2 + 5,
     1
   ])
 })
@@ -122,9 +122,9 @@ for (var i = 0; i < g.tris.length; i ++) {
 var vertices = []
 g.points.forEach(function (point) {
   vertices.push([
-    point[0] / 3 + 4,
-    point[1] / 3 + 4,
-    point[2] / 3 + 10,
+    point[0] * 2 / 3 + 4,
+    point[1] * 2 / 3 + 4,
+    point[2] * 2 / 3 + 10,
     1
   ])
 })

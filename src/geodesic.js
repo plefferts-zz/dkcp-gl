@@ -39,7 +39,7 @@ Point.prototype.getCoords = function () {
   var y = Math.sin(v)
   var z = Math.sin(u) * Math.cos(v)
 
-  return normalize(x, y, z, 2)
+  return normalize(x, y, z, 1)
 }
 
 function Line(counts, a, b) {
