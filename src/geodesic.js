@@ -125,7 +125,7 @@ Hedron.prototype.getGeometry = function (individual_faces) {
   for (var i = 0; i < this.tris.length; i ++) {
     var tri_points = this.tris[i].points
     var geom_points = []
-    for (var j in tri_points) {
+    for (var j = 0; j < tri_points.length; j ++) {
       var point = tri_points[j]
       if (individual_faces) {
         points.push(point.getCoords())

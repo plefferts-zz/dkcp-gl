@@ -8,21 +8,28 @@ function Transform() {
   this.position = new Float32Array([0, 0, 0]);
   this.rotateZ  = this.rotateX = this.rotateY = 0;
   this.matrix   = m4.identity(new Float32Array(16));
+  this.setRotationOrder('y', 'x', 'z')
 }
 Transform._nextId = 1;
+
+Transform.prototype.setRotationOrder = function (i, ii, iii) {
+  this.rotate1 = 'rotate' + i.toUpperCase();
+  this.rotate2 = 'rotate' + ii.toUpperCase();
+  this.rotate3 = 'rotate' + iii.toUpperCase();
+  return this
+}
 
 Transform.prototype.getValue = function () {
   if (this.dirty) {
     var m = m4.identity(new Float32Array(16));
 
-    if(this.rotateY)
-      m4.rotateY(m, this.rotateY, m);
-    if(this.rotateX)
-      m4.rotateX(m, this.rotateX, m);
-    if(this.rotateZ)
-      m4.rotateZ(m, this.rotateZ, m);
+    if(this[this.rotate1])
+      m4[this.rotate1](m, this[this.rotate1], m);
+    if(this[this.rotate2])
+      m4[this.rotate2](m, this[this.rotate2], m);
+    if(this[this.rotate3])
+      m4[this.rotate3](m, this[this.rotate3], m);
 
-    console.log(m)
     m4.setTranslation(m, this.position, m);
     m4.inverse(m, this.matrix);
     // var pos = tdl.fast.mulScalarVector(new Float32Array(3), -1, this.position);

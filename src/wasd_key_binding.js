@@ -68,7 +68,7 @@ WasdKeyBinding.prototype.bindKeyEvents = function(document, triggerEvents) {
 }
 
 WasdKeyBinding.prototype.applyActions = function (camera, actions, delta, theta) {
-  for (var i in actions) {
+  for (var i = 0; i < actions.length; i ++) {
     camera[actions[i]](delta, theta, -camera.getRotateY());
   }
 }
