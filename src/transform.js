@@ -16,7 +16,7 @@ Transform.prototype.setRotationOrder = function (i, ii, iii) {
   this.rotate1 = 'rotate' + i.toUpperCase();
   this.rotate2 = 'rotate' + ii.toUpperCase();
   this.rotate3 = 'rotate' + iii.toUpperCase();
-  return this
+  return
 }
 
 Transform.prototype.getValue = function () {
